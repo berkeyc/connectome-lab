@@ -566,7 +566,7 @@ export class ParkingWorld implements World {
   metrics(): Metric[] {
     return [
       { label: "Status", value: this.parkedAt !== null ? "parked" : this.reverse ? "reversing" : "driving forward" },
-      { label: "Parked", value: `${this.parks.length} of ${this.attempt - (this.parkedAt === null ? 1 : 0)} attempts` },
+      { label: "Parked", value: `${this.parks.length} · attempt ${this.attempt}` },
       { label: "Bumps", value: String(this.bumps) },
       { label: "Distance to spot", value: `${Math.hypot(this.target.x - this.car.x, this.target.y - this.car.y).toFixed(2)} m` },
     ];

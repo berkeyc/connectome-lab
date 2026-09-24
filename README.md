@@ -2,6 +2,8 @@
 
 **An open library of mapped nervous systems, and a laboratory to run experiments on them in the browser.**
 
+**Live:** https://connectome-lab-nu.vercel.app · try the [worm lab](https://connectome-lab-nu.vercel.app/lab/c-elegans) or a [looming threat for the fly](https://connectome-lab-nu.vercel.app/lab/fruit-fly-synthetic?p=looming)
+
 Scientists have now mapped every neuron and synapse of a worm, a fly larva and an adult fly brain, and pieces of mouse and human cortex. These wiring diagrams (connectomes) are public, but using them takes a research group. Connectome Lab packages them in one open format and lets anyone:
 
 * **explore** a nervous system: classes, transmitters, hubs, who talks to whom;

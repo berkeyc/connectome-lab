@@ -59,7 +59,7 @@ export default function About() {
         </ul>
 
         <h2>Run it yourself</h2>
-        <pre>{`git clone https://github.com/berkeyc/connectome-lab
+        <pre>{`git clone https://github.com/berkeyc/connectome-lab.git
 cd connectome-lab
 pip install -r requirements.txt
 python pipeline/build_web_bundle.py

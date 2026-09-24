@@ -6,9 +6,11 @@ import Sigil from "@/components/Sigil";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://connectome-lab-gamma.vercel.app"),
+  openGraph: { siteName: "Connectome Lab", type: "website" },
   title: { default: "Connectome Lab", template: "%s · Connectome Lab" },
   description:
-    "An open library of mapped nervous systems. Stimulate neurons, silence them, rewire the brain and see what the wiring alone can do, right in your browser.",
+    "Run experiments on real connectomes in your browser: a fly brain drives a car and parks it, a worm backs away from walls and searches for food. Open library of mapped nervous systems.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -22,6 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <span>Connectome Lab</span>
             </Link>
             <nav className="nav">
+              <Link href="/experiments">Experiments</Link>
               <Link href="/#library">Library</Link>
               <Link href="/lab/c-elegans">Lab</Link>
               <Link href="/about">Method</Link>

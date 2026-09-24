@@ -2,7 +2,7 @@
 
 **An open library of mapped nervous systems, and a laboratory to run experiments on them in the browser.**
 
-**Live:** https://connectome-lab-gamma.vercel.app · try the [worm lab](https://connectome-lab-gamma.vercel.app/lab/c-elegans) or a [looming threat for the fly](https://connectome-lab-gamma.vercel.app/lab/fruit-fly-synthetic?p=looming)
+**Live:** https://connectome-lab-gamma.vercel.app · watch a [fly brain drive a car](https://connectome-lab-gamma.vercel.app/experiments/fly-drives-a-car), [parallel park](https://connectome-lab-gamma.vercel.app/experiments/fly-parallel-parks), or a [worm back away from a wall](https://connectome-lab-gamma.vercel.app/experiments/worm-dish-edge)
 
 Scientists have now mapped every neuron and synapse of a worm, a fly larva and an adult fly brain, and pieces of mouse and human cortex. These wiring diagrams (connectomes) are public, but using them takes a research group. Connectome Lab packages them in one open format and lets anyone:
 
@@ -14,6 +14,24 @@ Scientists have now mapped every neuron and synapse of a worm, a fly larva and a
 * **share** any experiment as a link, and download its results as JSON.
 
 The core question behind every experiment: *how much behaviour can the wiring produce on its own?*
+
+## Experiments
+
+Brains in bodies, live in the browser. The world feeds the senses, the connectome moves the body, and a sidebar shows the brain's signals as scrolling traces, every spike, and an event log.
+
+| Experiment | Brain | Real wiring | Rewired control |
+|---|---|---|---|
+| [Worm hits the edge of the dish](https://connectome-lab-gamma.vercel.app/experiments/worm-dish-edge) | *C. elegans*, real | reverses and turns away at the wall | rarely reverses |
+| [Worm searches for food](https://connectome-lab-gamma.vercel.app/experiments/worm-food-search) | *C. elegans*, real | stays near food far longer (odour OFF cell AWC) | wanders off |
+| [Fly escapes a looming shadow](https://connectome-lab-gamma.vercel.app/experiments/fly-looming-escape) | fly, synthetic | 11 of 11 take offs, 38 ms reaction | late or no take off |
+| [Fly drives a car](https://connectome-lab-gamma.vercel.app/experiments/fly-drives-a-car) | fly, synthetic | 2 laps, 0 crashes in 40 s | 16 crashes |
+| [Fly parallel parks](https://connectome-lab-gamma.vercel.app/experiments/fly-parallel-parks) | fly, synthetic | 4 of 4 attempts parked | 0 parked |
+| The real fly brain drives a car, escapes a shadow | FlyWire, complete | local runner | |
+| Fly plays Minecraft | FlyWire, complete | planned, local runner | |
+
+Numbers come from `npm run check:experiments` (headless, two seeds, 40 s). Each experiment's page shows how senses map to neurons and neurons to movement; that mapping is a design choice, and everything in between is the connectome.
+
+Large experiments run on the **local runner**, a small Python program that simulates the brain on your computer and streams it to the site. See [local/README.md](local/README.md).
 
 ## What is in the library
 
@@ -107,7 +125,8 @@ An `experiments` table is ready for storing runs from the website.
 species/        the library: one folder per species (committed when small)
 pipeline/       importers, PostgreSQL loader, web bundle builder
 db/             schema, views and analysis queries
-web/            Next.js site; simulation engine in web/src/lib/engine
+web/            Next.js site; engine in web/src/lib/engine, experiments in web/src/lib/experiments
+local/          local runner for connectomes too big for a browser
 docs/           roadmap and contributor guides
 data/           large or raw downloads (not committed)
 ```

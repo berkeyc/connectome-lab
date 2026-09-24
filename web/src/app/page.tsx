@@ -1,8 +1,10 @@
 import Link from "next/link";
-import HeroDemo from "@/components/HeroDemo";
+import ExperimentPlayer from "@/components/ExperimentPlayer";
+import WorldThumb from "@/components/WorldThumb";
 import Sigil from "@/components/Sigil";
 import { getLibrary, STATUS_LABEL } from "@/lib/data";
 import type { SpeciesMeta } from "@/lib/engine/types";
+import { EXPERIMENTS } from "@/lib/experiments/catalog";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
@@ -10,30 +12,59 @@ export default async function Home() {
   const library = await getLibrary();
   const available = library.filter((s) => s.available);
   const later = library.filter((s) => !s.available);
-  const worm = library.find((s) => s.id === "c-elegans") as SpeciesMeta | undefined;
+  const fly = library.find((s) => s.id === "fruit-fly-synthetic") as SpeciesMeta | undefined;
 
   return (
     <>
-      <section className="wrap hero">
+      <section className="wrap hero-top">
         <div className="reveal">
           <div className="eyebrow">Open connectome library</div>
-          <h1 style={{ marginTop: 14 }}>Run experiments on real nervous systems.</h1>
-          <p className="lede" style={{ marginTop: 20 }}>
-            Scientists have mapped every neuron and synapse of a worm and a fly. Connectome Lab turns those
-            maps into a laboratory: stimulate a sense, remove a neuron, rewire the whole brain, and see what
-            the wiring alone produces.
+          <h1 style={{ marginTop: 14 }}>Real brains, driving real experiments.</h1>
+        </div>
+        <div className="reveal" style={{ ["--i" as string]: 1 }}>
+          <p className="lede">
+            Scientists have mapped every neuron and synapse of a worm and a fly. Here those wiring diagrams steer cars,
+            escape shadows and search for food, live in your browser. Change the brain and watch the behaviour change.
           </p>
           <div className="actions">
-            <Link className="btn primary" href="/lab/c-elegans">
-              Open the lab
+            <Link className="btn primary" href="/experiments">
+              Browse experiments
             </Link>
-            <Link className="btn" href="#library">
-              Browse the library
+            <Link className="btn" href="/lab/c-elegans">
+              Open the lab
             </Link>
           </div>
         </div>
-        <div className="reveal" style={{ ["--i" as string]: 2 }}>
-          {worm && <HeroDemo meta={worm} />}
+      </section>
+
+      <section className="wrap reveal" style={{ ["--i" as string]: 2 }}>
+        {fly && <ExperimentPlayer experimentId="fly-drives-a-car" meta={fly} compact />}
+        <p className="small faint" style={{ marginTop: 10 }}>
+          Live: a 5,236 neuron fly connectome keeps a car on the track. Its distance sensors feed the compass neurons,
+          and the DNa02 steering neurons turn the wheel. <Link href="/experiments/fly-drives-a-car">Open the full experiment</Link>
+        </p>
+      </section>
+
+      <section className="wrap" style={{ marginTop: 64 }}>
+        <div className="section-head">
+          <div>
+            <div className="eyebrow">Experiments</div>
+            <h2 style={{ marginTop: 8 }}>Pick an experiment, run it here</h2>
+          </div>
+          <Link className="btn small" href="/experiments">
+            All experiments
+          </Link>
+        </div>
+        <div className="exp-grid">
+          {EXPERIMENTS.filter((e) => e.runsIn === "browser").slice(0, 4).map((e, k) => (
+            <Link key={e.id} href={`/experiments/${e.id}`} className="panel exp-card wide reveal" style={{ ["--i" as string]: k }}>
+              <WorldThumb id={e.id} />
+              <div className="exp-body">
+                <h3>{e.title}</h3>
+                <p>{e.tagline}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 

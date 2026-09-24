@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check:presets": "tsx scripts/check-presets.ts"
+    "check:presets": "tsx scripts/check-presets.ts",
+    "check:experiments": "tsx scripts/check-experiments.ts"
   },
   "dependencies": {
     "geist": "^1.7.2",

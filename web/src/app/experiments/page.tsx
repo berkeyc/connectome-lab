@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import CommunityGrid from "@/components/CommunityGrid";
 import WorldThumb from "@/components/WorldThumb";
 import { getLibrary } from "@/lib/data";
 import { EXPERIMENTS } from "@/lib/experiments/catalog";
@@ -41,6 +42,20 @@ export default async function ExperimentsPage() {
           </Link>
         ))}
       </div>
+      <section style={{ marginTop: 56 }} id="community">
+        <div className="section-head">
+          <div>
+            <div className="eyebrow">From the community</div>
+            <h2 style={{ marginTop: 8 }}>The experiments that went viral</h2>
+          </div>
+          <p className="muted small" style={{ maxWidth: "52ch", margin: 0 }}>
+            In September 2026 people wired fly connectomes into games, cars and 3D bodies. Play the browser ones in a new
+            window, or try our own versions of the same ideas right here, with rewired brains to compare.
+          </p>
+        </div>
+        <CommunityGrid />
+      </section>
+
       <div className="panel block" style={{ marginTop: 28 }}>
         <h3>Why some experiments run locally</h3>
         <p className="sub" style={{ marginBottom: 0 }}>

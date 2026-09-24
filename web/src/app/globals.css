@@ -313,3 +313,8 @@ input[type="number"] { width: 90px; padding: 8px 10px; border-radius: 9px; borde
 @media (max-width: 900px) { .hero-top { grid-template-columns: 1fr; gap: 20px; padding-top: 36px; } }
 @media (max-width: 640px) { .hero-top { padding-left: 16px; padding-right: 16px; } }
 .steps { margin-top: 64px; }
+
+.community { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.community-card { padding: 20px; display: flex; flex-direction: column; gap: 8px; min-height: 250px; }
+.community-card p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+.community-card .row { flex-wrap: wrap; gap: 8px; padding-top: 8px; }

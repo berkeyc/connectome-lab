@@ -26,10 +26,13 @@ Brains in bodies, live in the browser. The world feeds the senses, the connectom
 | [Fly escapes a looming shadow](https://connectome-lab-gamma.vercel.app/experiments/fly-looming-escape) | fly, synthetic | 11 of 11 take offs, 38 ms reaction | late or no take off |
 | [Fly drives a car](https://connectome-lab-gamma.vercel.app/experiments/fly-drives-a-car) | fly, synthetic | 2 laps, 0 crashes in 40 s | 16 crashes |
 | [Fly parallel parks](https://connectome-lab-gamma.vercel.app/experiments/fly-parallel-parks) | fly, synthetic | 4 of 4 attempts parked | 0 parked |
+| [Fly runner](https://connectome-lab-gamma.vercel.app/experiments/fly-runner) | fly, synthetic | 0 crashes in 60 s, 3 of 3 seeds | crashes, one seed never clears an obstacle |
 | The real fly brain drives a car, escapes a shadow | FlyWire, complete | local runner | |
 | Fly plays Minecraft | FlyWire, complete | planned, local runner | |
 
 Numbers come from `npm run check:experiments` (headless, two seeds, 40 s). Each experiment's page shows how senses map to neurons and neurons to movement; that mapping is a design choice, and everything in between is the connectome.
+
+The experiment page also collects the **community experiments** that went viral in 2026 (Fly Dino, Fly Parking Lab, Swat, Flyhard, Minecraft and Doom flies and more), with links to play the browser ones in a new window and to our own versions of the same ideas. Their code stays with their authors; we link, we do not copy.
 
 Large experiments run on the **local runner**, a small Python program that simulates the brain on your computer and streams it to the site. See [local/README.md](local/README.md).
 

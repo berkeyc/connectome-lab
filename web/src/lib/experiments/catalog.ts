@@ -1,6 +1,7 @@
 // The experiment library. Each entry pairs a connectome with a world.
 import type { ExperimentDef } from "./types";
 import { DriveWorld, LoomingWorld, ParkingWorld } from "./fly";
+import { RunnerWorld } from "./runner-game";
 import { WormWorld } from "./worm";
 
 export const WORM_CHANNELS = [
@@ -118,6 +119,30 @@ export const EXPERIMENTS: ExperimentDef[] = [
     channels: [{ id: "mdn", label: "Reverse · moonwalker MDN", targets: [{ cell_type: "MDN" }], tone: "warn" }, ...FLY_STEER.slice(0, 2), { id: "bm", label: "Bristle touch · BM", targets: [{ cell_type: "BM" }], tone: "text" }],
     smoothMs: 80,
     createWorld: (seed) => new ParkingWorld(seed),
+  },
+  {
+    id: "fly-runner",
+    title: "Fly runner",
+    species: "fruit-fly-synthetic",
+    runsIn: "browser",
+    tagline: "Water drops, stones and spiders roll towards the fly. Every hop is a Giant Fiber escape.",
+    question: "Can the looming escape reflex alone carry a fly through an endless obstacle course?",
+    description: [
+      "Our take on the viral “Fly Dino” experiment, where a small fly circuit plays the Chrome dinosaur game. Instead of a trained readout, this version uses nothing but the escape reflex: an approaching obstacle grows on the fly's retina, the looming detectors LC4 and LPLC2 fire, and a Giant Fiber burst makes the fly hop.",
+      "The course speeds up over time. A hop that comes too early or too late ends the run, and a new run starts after a short pause.",
+      "Compare with a rewired brain: without the specific looming to Giant Fiber wiring, the fly walks straight into the first obstacle.",
+    ],
+    senses: ["Obstacle ahead, growing on the retina → LC4 and LPLC2"],
+    motor: ["Giant Fiber above 60 Hz → hop"],
+    inspiredBy: "Fly Dino by Mert Cobanov (flydino.cobanov.dev), an 80 cell MaleCNS circuit playing the Chrome dinosaur game. This is an independent implementation; no code from that project is used.",
+    channels: [
+      { id: "gf", label: "Giant Fiber · GF", targets: [{ cell_type: "GF" }], tone: "warn" },
+      { id: "lc4", label: "Looming detectors · LC4", targets: [{ cell_type: "LC4" }], tone: "accent" },
+      { id: "lplc2", label: "Looming detectors · LPLC2", targets: [{ cell_type: "LPLC2" }], tone: "accent" },
+      { id: "legs", label: "Leg motor neurons", targets: [{ cell_type: "MN_leg" }], tone: "text" },
+    ],
+    smoothMs: 25,
+    createWorld: (seed) => new RunnerWorld(seed),
   },
   {
     id: "flywire-fly-drives-a-car",

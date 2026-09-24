@@ -1,0 +1,74 @@
+{
+  "common_name": "Fruit fly (FlyWire, real)",
+  "latin_name": "Drosophila melanogaster",
+  "status": "import",
+  "summary": "The complete adult female fly brain: about 140,000 neurons and 50 million synapses, reconstructed from electron microscopy by the FlyWire consortium.",
+  "dataset": "FlyWire FAFB connectome via Codex",
+  "source_url": "https://codex.flywire.ai",
+  "license": "FlyWire data terms of use apply. Not redistributed in this repository.",
+  "citations": [
+    "Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.",
+    "Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of Drosophila. Nature 634, 139-152.",
+    "Eckstein, N. et al. (2024). Neurotransmitter classification from electron microscopy images at synaptic sites in Drosophila melanogaster. Cell 187, 2574-2594."
+  ],
+  "caveats": [
+    "Transmitter types are predictions from images, with a confidence score.",
+    "Too large for in-browser simulation; use the SQL layer or a server side run."
+  ],
+  "sign": {
+    "ACH": 1,
+    "GABA": -1,
+    "GLUT": -1,
+    "DA": 0,
+    "SER": 0,
+    "OCT": 0,
+    "": 0
+  },
+  "sim": {
+    "duration_ms": 1000,
+    "dt_ms": 0.1,
+    "v_rest": -52,
+    "v_reset": -52,
+    "v_th": -45,
+    "tau_m_ms": 20,
+    "t_ref_ms": 2.2,
+    "tau_syn_ms": 5,
+    "delay_ms": 1.8,
+    "w_syn_mv": 0.275,
+    "g_gap": 0,
+    "input_rate_hz": 150,
+    "input_w_mv": 68.75
+  },
+  "readouts": [
+    {
+      "id": "escape",
+      "label": "Escape take off",
+      "description": "Giant Fiber (DNp01) firing.",
+      "positive": {
+        "label": "Giant Fiber",
+        "cell_types": [
+          "DNp01"
+        ]
+      }
+    }
+  ],
+  "presets": [
+    {
+      "id": "looming",
+      "label": "Looming object",
+      "description": "Stimulate the looming detectors LC4 and LPLC2.",
+      "stimulate": [
+        {
+          "cell_type": "LC4"
+        },
+        {
+          "cell_type": "LPLC2"
+        }
+      ],
+      "lesion": [],
+      "expected": "Giant Fiber fires"
+    }
+  ],
+  "id": "fruit-fly-flywire",
+  "stats": null
+}

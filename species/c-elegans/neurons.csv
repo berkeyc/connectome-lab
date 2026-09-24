@@ -1,0 +1,303 @@
+neuron_id,super_class,class,cell_type,side,nt_type,nt_score
+ADAL,interneuron,Layer 3 interneuron,ADA,left,GLUT,1.0
+ADAR,interneuron,Layer 3 interneuron,ADA,right,GLUT,1.0
+ADEL,sensory,Sensory neuron (mechanosensory),ADE,left,,
+ADER,sensory,Sensory neuron (mechanosensory),ADE,right,,
+ADFL,sensory,Sensory neuron (amphid),ADF,left,ACH,1.0
+ADFR,sensory,Sensory neuron (amphid),ADF,right,ACH,1.0
+ADLL,sensory,"Sensory neuron (amphid, nociceptive)",ADL,left,GLUT,1.0
+ADLR,sensory,"Sensory neuron (amphid, nociceptive)",ADL,right,GLUT,1.0
+AFDL,sensory,Sensory neuron (amphid),AFD,left,ACH,0.5
+AFDR,sensory,Sensory neuron (amphid),AFD,right,ACH,0.5
+AIAL,interneuron,Layer 3 interneuron,AIA,left,ACH,1.0
+AIAR,interneuron,Layer 3 interneuron,AIA,right,ACH,1.0
+AIBL,interneuron,Layer 2 interneuron,AIB,left,GLUT,1.0
+AIBR,interneuron,Layer 2 interneuron,AIB,right,GLUT,1.0
+AIML,interneuron,Category 4 interneuron,AIM,left,GLUT,1.0
+AIMR,interneuron,Category 4 interneuron,AIM,right,GLUT,1.0
+AINL,interneuron,Category 4 interneuron,AIN,left,ACH,1.0
+AINR,interneuron,Category 4 interneuron,AIN,right,ACH,1.0
+AIYL,interneuron,Layer 3 interneuron,AIY,left,ACH,1.0
+AIYR,interneuron,Layer 3 interneuron,AIY,right,ACH,1.0
+AIZL,interneuron,Layer 3 interneuron,AIZ,left,GLUT,1.0
+AIZR,interneuron,Layer 3 interneuron,AIZ,right,GLUT,1.0
+ALA,interneuron,Layer 3 interneuron,ALA,center,GABA,1.0
+ALML,sensory,Sensory neuron (mechanosensory),ALM,left,GLUT,1.0
+ALMR,sensory,Sensory neuron (mechanosensory),ALM,right,GLUT,1.0
+ALNL,sensory,Sensory neuron (touch),ALN,left,ACH,1.0
+ALNR,sensory,Sensory neuron (touch),ALN,right,ACH,1.0
+AQR,sensory,Sensory neuron (touch),AQR,center,GLUT,1.0
+AS1,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS10,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS11,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS2,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS3,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS4,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS5,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS6,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS7,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS8,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+AS9,motor,Ventral cord motor neuron,AS,center,ACH,1.0
+ASEL,sensory,Sensory neuron (amphid),ASE,left,GLUT,1.0
+ASER,sensory,Sensory neuron (amphid),ASE,right,GLUT,1.0
+ASGL,sensory,Sensory neuron (amphid),ASG,left,GLUT,1.0
+ASGR,sensory,Sensory neuron (amphid),ASG,right,GLUT,1.0
+ASHL,sensory,"Sensory neuron (amphid, nociceptive)",ASH,left,GLUT,1.0
+ASHR,sensory,"Sensory neuron (amphid, nociceptive)",ASH,right,GLUT,1.0
+ASIL,sensory,Sensory neuron (amphid),ASI,left,BET,1.0
+ASIR,sensory,Sensory neuron (amphid),ASI,right,BET,1.0
+ASJL,sensory,Sensory neuron (amphid),ASJ,left,ACH,1.0
+ASJR,sensory,Sensory neuron (amphid),ASJ,right,ACH,1.0
+ASKL,sensory,Sensory neuron (amphid),ASK,left,GLUT,1.0
+ASKR,sensory,Sensory neuron (amphid),ASK,right,GLUT,1.0
+AUAL,interneuron,Layer 3 interneuron,AUA,left,GLUT,0.5
+AUAR,interneuron,Layer 3 interneuron,AUA,right,GLUT,0.5
+AVAL,interneuron,Layer 1 interneuron,AVA,left,ACH,1.0
+AVAR,interneuron,Layer 1 interneuron,AVA,right,ACH,1.0
+AVBL,interneuron,Layer 1 interneuron,AVB,left,ACH,1.0
+AVBR,interneuron,Layer 1 interneuron,AVB,right,ACH,1.0
+AVDL,interneuron,Layer 2 interneuron,AVD,left,ACH,1.0
+AVDR,interneuron,Layer 2 interneuron,AVD,right,ACH,1.0
+AVEL,interneuron,Layer 1 interneuron,AVE,left,ACH,1.0
+AVER,interneuron,Layer 1 interneuron,AVE,right,ACH,1.0
+AVFL,interneuron,Layer 3 interneuron,AVF,left,,
+AVFR,interneuron,Layer 3 interneuron,AVF,right,,
+AVG,interneuron,Layer 3 interneuron,AVG,center,ACH,1.0
+AVHL,interneuron,Layer 3 interneuron,AVH,left,,
+AVHR,interneuron,Layer 3 interneuron,AVH,right,,
+AVJL,interneuron,Layer 2 interneuron,AVJ,left,GABA,1.0
+AVJR,interneuron,Layer 2 interneuron,AVJ,right,GABA,1.0
+AVKL,interneuron,Layer 2 interneuron,AVK,left,,
+AVKR,interneuron,Layer 2 interneuron,AVK,right,,
+AVL,interneuron,Layer 2 interneuron,AVL,center,GABA,1.0
+AVM,sensory,Sensory neuron (mechanosensory),AVM,center,GLUT,1.0
+AWAL,sensory,Sensory neuron (amphid),AWA,left,ACH,1.0
+AWAR,sensory,Sensory neuron (amphid),AWA,right,ACH,1.0
+AWBL,sensory,Sensory neuron (amphid),AWB,left,ACH,1.0
+AWBR,sensory,Sensory neuron (amphid),AWB,right,ACH,1.0
+AWCL,sensory,Sensory neuron (amphid),AWC,left,GLUT,1.0
+AWCR,sensory,Sensory neuron (amphid),AWC,right,GLUT,1.0
+BAGL,sensory,"Sensory neuron (O2, CO2, social signals, touch)",BAG,left,GLUT,1.0
+BAGR,sensory,"Sensory neuron (O2, CO2, social signals, touch)",BAG,right,GLUT,1.0
+BDUL,interneuron,Layer 3 interneuron,BDU,left,,
+BDUR,interneuron,Layer 3 interneuron,BDU,right,,
+CANL,other,Canal neuron,CAN,left,,
+CANR,other,Canal neuron,CAN,right,,
+CEPDL,sensory,Sensory neuron (cephalic),CEPD,left,,
+CEPDR,sensory,Sensory neuron (cephalic),CEPD,right,,
+CEPVL,sensory,Sensory neuron (cephalic),CEPV,left,,
+CEPVR,sensory,Sensory neuron (cephalic),CEPV,right,,
+DA1,motor,Ventral cord motor neuron,DA,center,ACH,1.0
+DA2,motor,Ventral cord motor neuron,DA,center,ACH,1.0
+DA3,motor,Ventral cord motor neuron,DA,center,ACH,1.0
+DA4,motor,Ventral cord motor neuron,DA,center,ACH,1.0
+DA5,motor,Ventral cord motor neuron,DA,center,ACH,1.0
+DA6,motor,Ventral cord motor neuron,DA,center,ACH,1.0
+DA7,motor,Ventral cord motor neuron,DA,center,ACH,1.0
+DA8,motor,Ventral cord motor neuron,DA,center,ACH,1.0
+DA9,motor,Ventral cord motor neuron,DA,center,ACH,1.0
+DB1,motor,Ventral cord motor neuron,DB,center,ACH,1.0
+DB2,motor,Ventral cord motor neuron,DB,center,ACH,1.0
+DB3,motor,Ventral cord motor neuron,DB,center,ACH,1.0
+DB4,motor,Ventral cord motor neuron,DB,center,ACH,1.0
+DB5,motor,Ventral cord motor neuron,DB,center,ACH,1.0
+DB6,motor,Ventral cord motor neuron,DB,center,ACH,1.0
+DB7,motor,Ventral cord motor neuron,DB,center,ACH,1.0
+DD1,motor,Ventral cord motor neuron,DD,center,GABA,1.0
+DD2,motor,Ventral cord motor neuron,DD,center,GABA,1.0
+DD3,motor,Ventral cord motor neuron,DD,center,GABA,1.0
+DD4,motor,Ventral cord motor neuron,DD,center,,
+DD5,motor,Ventral cord motor neuron,DD,center,,
+DD6,motor,Ventral cord motor neuron,DD,center,GABA,1.0
+DVA,sensory,Sensory neuron (mechanosensory),DVA,center,ACH,0.5
+DVB,interneuron,Layer 3 interneuron,DVB,center,GABA,1.0
+DVC,interneuron,Layer 2 interneuron,DVC,center,GLUT,1.0
+FLPL,sensory,Sensory neuron (mechanosensory),FLP,left,GLUT,1.0
+FLPR,sensory,Sensory neuron (mechanosensory),FLP,right,GLUT,1.0
+HSNL,motor,Hermaphrodite specific motor neuron,HSN,left,ACH,1.0
+HSNR,motor,Hermaphrodite specific motor neuron,HSN,right,ACH,1.0
+I1L,interneuron,Pharyngeal interneuron,I1,left,ACH,1.0
+I1R,interneuron,Pharyngeal interneuron,I1,right,ACH,1.0
+I2L,interneuron,Pharyngeal interneuron,I2,left,GLUT,1.0
+I2R,interneuron,Pharyngeal interneuron,I2,right,GLUT,1.0
+I3,interneuron,Pharyngeal interneuron,I3,center,ACH,1.0
+I4,interneuron,Pharyngeal interneuron,I4,center,GLUT,1.0
+I5,interneuron,Pharyngeal interneuron,I5,center,GLUT,1.0
+I6,interneuron,Pharyngeal interneuron,I6,center,,
+IL1DL,sensory,Sensory neuron (cephalic),IL1D,left,GLUT,1.0
+IL1DR,sensory,Sensory neuron (cephalic),IL1D,right,GLUT,1.0
+IL1L,sensory,Sensory neuron (cephalic),IL1,left,GLUT,1.0
+IL1R,sensory,Sensory neuron (cephalic),IL1,right,GLUT,1.0
+IL1VL,sensory,Sensory neuron (cephalic),IL1V,left,GLUT,1.0
+IL1VR,sensory,Sensory neuron (cephalic),IL1V,right,GLUT,1.0
+IL2DL,sensory,Sensory neuron (cephalic),IL2D,left,ACH,1.0
+IL2DR,sensory,Sensory neuron (cephalic),IL2D,right,ACH,1.0
+IL2L,sensory,Sensory neuron (cephalic),IL2,left,ACH,1.0
+IL2R,sensory,Sensory neuron (cephalic),IL2,right,ACH,1.0
+IL2VL,sensory,Sensory neuron (cephalic),IL2V,left,ACH,1.0
+IL2VR,sensory,Sensory neuron (cephalic),IL2V,right,ACH,1.0
+LUAL,interneuron,Layer 3 interneuron,LUA,left,GLUT,1.0
+LUAR,interneuron,Layer 3 interneuron,LUA,right,GLUT,1.0
+M1,motor,Pharyngeal motor neuron,M1,center,ACH,1.0
+M2L,motor,Pharyngeal motor neuron,M2,left,ACH,1.0
+M2R,motor,Pharyngeal motor neuron,M2,right,ACH,1.0
+M3L,motor,Pharyngeal motor neuron,M3,left,GLUT,1.0
+M3R,motor,Pharyngeal motor neuron,M3,right,GLUT,1.0
+M4,motor,Pharyngeal motor neuron,M4,center,ACH,1.0
+M5,motor,Pharyngeal motor neuron,M5,center,ACH,0.5
+MCL,motor,Pharyngeal polymodal neuron,MC,left,,
+MCR,motor,Pharyngeal polymodal neuron,MC,right,,
+MI,motor,Pharyngeal polymodal neuron,MI,center,GLUT,1.0
+NSML,sensory,Pharyngeal polymodal neuron,NSM,left,BET,1.0
+NSMR,sensory,Pharyngeal polymodal neuron,NSM,right,BET,1.0
+OLLL,sensory,Sensory neuron (cephalic),OLL,left,GLUT,1.0
+OLLR,sensory,Sensory neuron (cephalic),OLL,right,GLUT,1.0
+OLQDL,sensory,Sensory neuron (cephalic),OLQD,left,GLUT,1.0
+OLQDR,sensory,Sensory neuron (cephalic),OLQD,right,GLUT,1.0
+OLQVL,sensory,Sensory neuron (cephalic),OLQV,left,GLUT,1.0
+OLQVR,sensory,Sensory neuron (cephalic),OLQV,right,GLUT,1.0
+PDA,motor,Ventral cord motor neuron,PDA,center,ACH,1.0
+PDB,motor,Ventral cord motor neuron,PDB,center,ACH,1.0
+PDEL,sensory,Sensory neuron (mechanosensory),PDE,left,GLUT,1.0
+PDER,sensory,Sensory neuron (mechanosensory),PDE,right,GLUT,1.0
+PHAL,sensory,Sensory neuron (phasmid),PHA,left,GLUT,1.0
+PHAR,sensory,Sensory neuron (phasmid),PHA,right,GLUT,1.0
+PHBL,sensory,Sensory neuron (phasmid),PHB,left,GLUT,1.0
+PHBR,sensory,Sensory neuron (phasmid),PHB,right,GLUT,1.0
+PHCL,sensory,Sensory neuron (phasmid),PHC,left,GLUT,1.0
+PHCR,sensory,Sensory neuron (phasmid),PHC,right,GLUT,1.0
+PLML,sensory,Sensory neuron (mechanosensory),PLM,left,GLUT,1.0
+PLMR,sensory,Sensory neuron (mechanosensory),PLM,right,GLUT,1.0
+PLNL,sensory,Sensory neuron (touch),PLN,left,ACH,1.0
+PLNR,sensory,Sensory neuron (touch),PLN,right,ACH,1.0
+PQR,sensory,Sensory neuron (touch),PQR,center,GLUT,1.0
+PVCL,interneuron,Layer 1 interneuron,PVC,left,ACH,1.0
+PVCR,interneuron,Layer 1 interneuron,PVC,right,ACH,1.0
+PVDL,sensory,Sensory neuron (mechanosensory),PVD,left,GLUT,1.0
+PVDR,sensory,Sensory neuron (mechanosensory),PVD,right,GLUT,1.0
+PVM,sensory,Sensory neuron (mechanosensory),PVM,center,,
+PVNL,interneuron,Layer 3 interneuron,PVN,left,ACH,0.5
+PVNR,interneuron,Layer 3 interneuron,PVN,right,ACH,0.5
+PVPL,interneuron,Layer 3 interneuron,PVP,left,ACH,1.0
+PVPR,interneuron,Layer 3 interneuron,PVP,right,ACH,1.0
+PVQL,interneuron,Layer 3 interneuron,PVQ,left,,
+PVQR,interneuron,Layer 3 interneuron,PVQ,right,,
+PVR,interneuron,Layer 3 interneuron,PVR,center,GLUT,1.0
+PVT,interneuron,Layer 2 interneuron,PVT,center,,
+PVWL,interneuron,Layer 2 interneuron,PVW,left,,
+PVWR,interneuron,Layer 2 interneuron,PVW,right,,
+RIAL,interneuron,Layer 1 interneuron,RIA,left,GLUT,1.0
+RIAR,interneuron,Layer 1 interneuron,RIA,right,GLUT,1.0
+RIBL,interneuron,Layer 2 interneuron,RIB,left,GABA,1.0
+RIBR,interneuron,Layer 2 interneuron,RIB,right,GABA,1.0
+RICL,interneuron,Layer 2 interneuron,RIC,left,GLUT,1.0
+RICR,interneuron,Layer 2 interneuron,RIC,right,GLUT,1.0
+RID,interneuron,Layer 1 interneuron,RID,center,,
+RIFL,interneuron,Layer 3 interneuron,RIF,left,ACH,1.0
+RIFR,interneuron,Layer 3 interneuron,RIF,right,ACH,1.0
+RIGL,interneuron,Layer 2 interneuron,RIG,left,GLUT,1.0
+RIGR,interneuron,Layer 2 interneuron,RIG,right,GLUT,1.0
+RIH,interneuron,Category 4 interneuron,RIH,center,ACH,1.0
+RIML,interneuron,"Layer 1 interneuron; motorneuron in White et al., 1986",RIM,left,GLUT,0.5
+RIMR,interneuron,"Layer 1 interneuron; motorneuron in White et al., 1986",RIM,right,GLUT,0.5
+RIPL,interneuron,Linker to pharynx,RIP,left,ACH,1.0
+RIPR,interneuron,Linker to pharynx,RIP,right,ACH,1.0
+RIR,interneuron,Category 4 interneuron,RIR,center,ACH,0.5
+RIS,interneuron,Layer 3 interneuron,RIS,center,GABA,1.0
+RIVL,motor,Head motor neuron,RIV,left,ACH,1.0
+RIVR,motor,Head motor neuron,RIV,right,ACH,1.0
+RMDDL,motor,Head motor neuron,RMDD,left,ACH,1.0
+RMDDR,motor,Head motor neuron,RMDD,right,ACH,1.0
+RMDL,motor,Head motor neuron,RMD,left,ACH,1.0
+RMDR,motor,Head motor neuron,RMD,right,ACH,1.0
+RMDVL,motor,Head motor neuron,RMDV,left,ACH,1.0
+RMDVR,motor,Head motor neuron,RMDV,right,ACH,1.0
+RMED,motor,Head motor neuron,RMED,center,GABA,1.0
+RMEL,motor,Head motor neuron,RME,left,GABA,1.0
+RMER,motor,Head motor neuron,RME,right,GABA,1.0
+RMEV,motor,Head motor neuron,RMEV,center,GABA,1.0
+RMFL,interneuron,Layer 2 interneuron,RMF,left,ACH,1.0
+RMFR,interneuron,Layer 2 interneuron,RMF,right,ACH,1.0
+RMGL,interneuron,Layer 2 interneuron,RMG,left,,
+RMGR,interneuron,Layer 2 interneuron,RMG,right,,
+RMHL,motor,Head motor neuron,RMH,left,ACH,1.0
+RMHR,motor,Head motor neuron,RMH,right,ACH,1.0
+SAADL,interneuron,Layer 2 interneuron,SAAD,left,ACH,1.0
+SAADR,interneuron,Layer 2 interneuron,SAAD,right,ACH,1.0
+SAAVL,interneuron,Layer 2 interneuron,SAAV,left,ACH,1.0
+SAAVR,interneuron,Layer 2 interneuron,SAAV,right,ACH,1.0
+SABD,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SABD,center,ACH,1.0
+SABVL,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SABV,left,ACH,1.0
+SABVR,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SABV,right,,
+SDQL,sensory,Sensory neuron (touch),SDQ,left,ACH,1.0
+SDQR,sensory,Sensory neuron (touch),SDQ,right,ACH,1.0
+SIADL,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SIAD,left,ACH,1.0
+SIADR,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SIAD,right,ACH,1.0
+SIAVL,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SIAV,left,ACH,1.0
+SIAVR,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SIAV,right,ACH,1.0
+SIBDL,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SIBD,left,ACH,1.0
+SIBDR,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SIBD,right,ACH,1.0
+SIBVL,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SIBV,left,ACH,1.0
+SIBVR,motor,"Sublateral motor neuron; interneuron in White et al., 1986",SIBV,right,ACH,1.0
+SMBDL,motor,Sublateral motor neuron,SMBD,left,ACH,1.0
+SMBDR,motor,Sublateral motor neuron,SMBD,right,ACH,1.0
+SMBVL,motor,Sublateral motor neuron,SMBV,left,ACH,1.0
+SMBVR,motor,Sublateral motor neuron,SMBV,right,ACH,1.0
+SMDDL,motor,Sublateral motor neuron,SMDD,left,ACH,0.5
+SMDDR,motor,Sublateral motor neuron,SMDD,right,ACH,0.5
+SMDVL,motor,Sublateral motor neuron,SMDV,left,ACH,0.5
+SMDVR,motor,Sublateral motor neuron,SMDV,right,ACH,0.5
+URADL,motor,Head motor neuron,URAD,left,ACH,1.0
+URADR,motor,Head motor neuron,URAD,right,ACH,1.0
+URAVL,motor,Head motor neuron,URAV,left,ACH,1.0
+URAVR,motor,Head motor neuron,URAV,right,ACH,1.0
+URBL,interneuron,Category 4 interneuron,URB,left,ACH,1.0
+URBR,interneuron,Category 4 interneuron,URB,right,ACH,1.0
+URXL,sensory,"Sensory neuron (O2, CO2, social signals, touch)",URX,left,ACH,1.0
+URXR,sensory,"Sensory neuron (O2, CO2, social signals, touch)",URX,right,ACH,1.0
+URYDL,sensory,Sensory neuron (cephalic),URYD,left,GLUT,1.0
+URYDR,sensory,Sensory neuron (cephalic),URYD,right,GLUT,1.0
+URYVL,sensory,Sensory neuron (cephalic),URYV,left,GLUT,1.0
+URYVR,sensory,Sensory neuron (cephalic),URYV,right,GLUT,1.0
+VA1,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA10,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA11,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA12,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA2,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA3,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA4,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA5,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA6,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA7,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA8,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VA9,motor,Ventral cord motor neuron,VA,center,ACH,1.0
+VB1,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB10,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB11,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB2,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB3,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB4,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB5,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB6,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB7,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB8,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VB9,motor,Ventral cord motor neuron,VB,center,ACH,1.0
+VC1,motor,Hermaphrodite specific motor neuron,VC,center,ACH,1.0
+VC2,motor,Hermaphrodite specific motor neuron,VC,center,ACH,1.0
+VC3,motor,Hermaphrodite specific motor neuron,VC,center,ACH,1.0
+VC4,motor,Hermaphrodite specific motor neuron,VC,center,ACH,1.0
+VC5,motor,Hermaphrodite specific motor neuron,VC,center,ACH,1.0
+VC6,motor,Hermaphrodite specific motor neuron,VC,center,ACH,1.0
+VD1,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD10,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD11,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD12,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD13,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD2,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD3,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD4,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD5,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD6,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD7,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD8,motor,Ventral cord motor neuron,VD,center,GABA,1.0
+VD9,motor,Ventral cord motor neuron,VD,center,GABA,1.0

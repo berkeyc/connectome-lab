@@ -1,0 +1,14 @@
+# Local PostgreSQL for Connectome Lab:  docker compose up -d
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: connectome
+    ports:
+      - "5432:5432"
+    volumes:
+      - connectome-data:/var/lib/postgresql/data
+volumes:
+  connectome-data:

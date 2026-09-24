@@ -1,0 +1,447 @@
+[
+ {
+  "common_name": "Nematode worm",
+  "latin_name": "Caenorhabditis elegans",
+  "status": "real",
+  "summary": "The first animal whose entire nervous system was mapped. 302 neurons, wired almost identically in every individual, controlling crawling, feeding, egg laying and escape.",
+  "dataset": "Cook et al. 2019 hermaphrodite connectome with Wang et al. 2024 transmitter atlas",
+  "source_url": "https://github.com/openworm/ConnectomeToolbox",
+  "license": "Data redistributed by OpenWorm ConnectomeToolbox (MIT). Cite the original papers.",
+  "citations": [
+   "Cook, S. J. et al. (2019). Whole-animal connectomes of both Caenorhabditis elegans sexes. Nature 571, 63-71.",
+   "Wang, C. et al. (2024). A neurotransmitter atlas of C. elegans males and hermaphrodites. eLife 13, RP95402.",
+   "Gleeson, P. et al. ConnectomeToolbox, OpenWorm. https://github.com/openworm/ConnectomeToolbox"
+  ],
+  "caveats": [
+   "Most C. elegans neurons are graded, not spiking. The lab uses the same spiking model as for flies, a strong simplification. Some reflexes (nose touch) are reproduced, others (tail touch) are not.",
+   "Glutamate can excite or inhibit depending on the receptor. It is treated as excitatory here because the classic touch and escape reflexes (ASH, FLP, PLM onto command interneurons) use excitatory glutamate receptors. Some synapses, such as AWC onto AIY, are actually inhibitory.",
+   "Gap junctions are modelled as simple electrical coupling with one shared strength."
+  ],
+  "sign": {
+   "ACH": 1,
+   "GABA": -1,
+   "GLUT": 1,
+   "BET": 0,
+   "": 0
+  },
+  "sim": {
+   "duration_ms": 1000,
+   "dt_ms": 0.1,
+   "v_rest": -52,
+   "v_reset": -52,
+   "v_th": -45,
+   "tau_m_ms": 20,
+   "t_ref_ms": 2.2,
+   "tau_syn_ms": 5,
+   "delay_ms": 1.8,
+   "w_syn_mv": 0.7,
+   "g_gap": 0.002,
+   "input_rate_hz": 150,
+   "input_w_mv": 68.75
+  },
+  "readouts": [
+   {
+    "id": "direction",
+    "label": "Crawling direction",
+    "description": "Forward command neurons minus backward command neurons.",
+    "positive": {
+     "label": "forward",
+     "cell_types": [
+      "AVB",
+      "PVC",
+      "VB",
+      "DB"
+     ]
+    },
+    "negative": {
+     "label": "backward",
+     "cell_types": [
+      "AVA",
+      "AVD",
+      "AVE",
+      "VA",
+      "DA"
+     ]
+    }
+   },
+   {
+    "id": "head",
+    "label": "Head turning",
+    "description": "Dorsal minus ventral head motor neurons.",
+    "positive": {
+     "label": "dorsal",
+     "cell_types": [
+      "RMDD",
+      "SMDD"
+     ]
+    },
+    "negative": {
+     "label": "ventral",
+     "cell_types": [
+      "RMDV",
+      "SMDV"
+     ]
+    }
+   }
+  ],
+  "presets": [
+   {
+    "id": "nose-touch",
+    "label": "Touch the nose",
+    "description": "Stimulate the nose touch and pain sensors ASH and FLP. Real worms reverse.",
+    "stimulate": [
+     {
+      "cell_type": "ASH"
+     },
+     {
+      "cell_type": "FLP"
+     }
+    ],
+    "lesion": [],
+    "expected": "In real worms: the animal reverses (crawling direction below zero)."
+   },
+   {
+    "id": "tail-touch",
+    "label": "Touch the tail",
+    "description": "Stimulate the posterior touch receptors PLM. Real worms speed forward.",
+    "stimulate": [
+     {
+      "cell_type": "PLM"
+     }
+    ],
+    "lesion": [],
+    "expected": "In real worms: the animal speeds forward. Does the wiring alone reproduce this?"
+   },
+   {
+    "id": "head-touch-no-ava",
+    "label": "Nose touch without AVA",
+    "description": "Same nose touch, but the backward command interneuron AVA is removed, as in classic laser ablation experiments.",
+    "stimulate": [
+     {
+      "cell_type": "ASH"
+     },
+     {
+      "cell_type": "FLP"
+     }
+    ],
+    "lesion": [
+     {
+      "cell_type": "AVA"
+     }
+    ],
+    "expected": "In real worms: reversals become rare and slow."
+   },
+   {
+    "id": "gentle-body-touch",
+    "label": "Gentle touch on the body",
+    "description": "Stimulate the anterior gentle touch receptors ALM and AVM.",
+    "stimulate": [
+     {
+      "cell_type": "ALM"
+     },
+     {
+      "cell_type": "AVM"
+     }
+    ],
+    "lesion": [],
+    "expected": "In real worms: the animal reverses. Does the wiring alone reproduce this?"
+   }
+  ],
+  "id": "c-elegans",
+  "stats": {
+   "neurons": 302,
+   "connections": 5905,
+   "synapses": 32488
+  },
+  "available": true
+ },
+ {
+  "common_name": "Fruit fly (FlyWire, real)",
+  "latin_name": "Drosophila melanogaster",
+  "status": "import",
+  "summary": "The complete adult female fly brain: about 140,000 neurons and 50 million synapses, reconstructed from electron microscopy by the FlyWire consortium.",
+  "dataset": "FlyWire FAFB connectome via Codex",
+  "source_url": "https://codex.flywire.ai",
+  "license": "FlyWire data terms of use apply. Not redistributed in this repository.",
+  "citations": [
+   "Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.",
+   "Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of Drosophila. Nature 634, 139-152.",
+   "Eckstein, N. et al. (2024). Neurotransmitter classification from electron microscopy images at synaptic sites in Drosophila melanogaster. Cell 187, 2574-2594."
+  ],
+  "caveats": [
+   "Transmitter types are predictions from images, with a confidence score.",
+   "Too large for in-browser simulation; use the SQL layer or a server side run."
+  ],
+  "sign": {
+   "ACH": 1,
+   "GABA": -1,
+   "GLUT": -1,
+   "DA": 0,
+   "SER": 0,
+   "OCT": 0,
+   "": 0
+  },
+  "sim": {
+   "duration_ms": 1000,
+   "dt_ms": 0.1,
+   "v_rest": -52,
+   "v_reset": -52,
+   "v_th": -45,
+   "tau_m_ms": 20,
+   "t_ref_ms": 2.2,
+   "tau_syn_ms": 5,
+   "delay_ms": 1.8,
+   "w_syn_mv": 0.275,
+   "g_gap": 0,
+   "input_rate_hz": 150,
+   "input_w_mv": 68.75
+  },
+  "readouts": [
+   {
+    "id": "escape",
+    "label": "Escape take off",
+    "description": "Giant Fiber (DNp01) firing.",
+    "positive": {
+     "label": "Giant Fiber",
+     "cell_types": [
+      "DNp01"
+     ]
+    }
+   }
+  ],
+  "presets": [
+   {
+    "id": "looming",
+    "label": "Looming object",
+    "description": "Stimulate the looming detectors LC4 and LPLC2.",
+    "stimulate": [
+     {
+      "cell_type": "LC4"
+     },
+     {
+      "cell_type": "LPLC2"
+     }
+    ],
+    "lesion": [],
+    "expected": "Giant Fiber fires"
+   }
+  ],
+  "id": "fruit-fly-flywire",
+  "stats": null,
+  "available": false
+ },
+ {
+  "common_name": "Fruit fly (synthetic demo)",
+  "latin_name": "Drosophila melanogaster",
+  "status": "synthetic",
+  "summary": "A 5,000 neuron stand in for the fly brain with realistic circuit layout (vision, smell, memory, navigation, escape) and invented numbers. Fast enough to experiment with in the browser.",
+  "dataset": "Generated by pipeline/make_synthetic_fly.py (seed 42)",
+  "source_url": "https://codex.flywire.ai",
+  "license": "Generated data, MIT",
+  "citations": [
+   "Circuit layout inspired by: Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.",
+   "Simulation parameters from: Shiu, P. K. et al. (2024). A Drosophila computational brain model reveals sensorimotor processing. Nature 634, 210-219."
+  ],
+  "caveats": [
+   "Synthetic data. Cell type names are real, the wiring numbers are invented.",
+   "Use the FlyWire importer to run the same experiments on the real brain."
+  ],
+  "sign": {
+   "ACH": 1,
+   "GABA": -1,
+   "GLUT": -1,
+   "HA": -1,
+   "DA": 0,
+   "SER": 0,
+   "OCT": 0,
+   "": 0
+  },
+  "sim": {
+   "duration_ms": 1000,
+   "dt_ms": 0.1,
+   "v_rest": -52,
+   "v_reset": -52,
+   "v_th": -45,
+   "tau_m_ms": 20,
+   "t_ref_ms": 2.2,
+   "tau_syn_ms": 5,
+   "delay_ms": 1.8,
+   "w_syn_mv": 0.275,
+   "g_gap": 0,
+   "input_rate_hz": 150,
+   "input_w_mv": 68.75
+  },
+  "readouts": [
+   {
+    "id": "escape",
+    "label": "Escape take off",
+    "description": "Firing of the Giant Fiber, the neuron that triggers the jump.",
+    "positive": {
+     "label": "Giant Fiber",
+     "cell_types": [
+      "GF"
+     ]
+    }
+   },
+   {
+    "id": "steer",
+    "label": "Steering",
+    "description": "Right minus left DNa02, the descending neurons that steer walking.",
+    "positive": {
+     "label": "right",
+     "cell_types": [
+      "DNa02"
+     ],
+     "side": "right"
+    },
+    "negative": {
+     "label": "left",
+     "cell_types": [
+      "DNa02"
+     ],
+     "side": "left"
+    }
+   },
+   {
+    "id": "backward",
+    "label": "Backward walking",
+    "description": "Firing of the moonwalker descending neurons (MDN).",
+    "positive": {
+     "label": "MDN",
+     "cell_types": [
+      "MDN"
+     ]
+    }
+   }
+  ],
+  "presets": [
+   {
+    "id": "looming",
+    "label": "Looming object",
+    "description": "Something approaches fast from the right. Stimulate the looming detectors LC4 and LPLC2.",
+    "stimulate": [
+     {
+      "cell_type": "LC4",
+      "side": "right"
+     },
+     {
+      "cell_type": "LPLC2",
+      "side": "right"
+     }
+    ],
+    "lesion": [],
+    "expected": "Giant Fiber fires, the fly escapes"
+   },
+   {
+    "id": "looming-no-lplc2",
+    "label": "Looming without LPLC2",
+    "description": "Same threat, but LPLC2 neurons are silenced.",
+    "stimulate": [
+     {
+      "cell_type": "LC4",
+      "side": "right"
+     },
+     {
+      "cell_type": "LPLC2",
+      "side": "right"
+     }
+    ],
+    "lesion": [
+     {
+      "cell_type": "LPLC2"
+     }
+    ],
+    "expected": "escape drive drops"
+   },
+   {
+    "id": "bristle",
+    "label": "Touch the head bristles",
+    "description": "Stimulate bristle mechanosensory neurons (BM).",
+    "stimulate": [
+     {
+      "cell_type": "BM"
+     }
+    ],
+    "lesion": [],
+    "expected": "backward walking"
+   },
+   {
+    "id": "smell",
+    "label": "Smell an odour",
+    "description": "Stimulate olfactory receptor neurons (ORN) and watch memory output neurons (MBON).",
+    "stimulate": [
+     {
+      "cell_type": "ORN"
+     }
+    ],
+    "lesion": [],
+    "expected": "MBON activity, little motor output"
+   },
+   {
+    "id": "compass",
+    "label": "Kick the compass",
+    "description": "Stimulate the central complex compass neurons (EPG) on the right.",
+    "stimulate": [
+     {
+      "cell_type": "EPG",
+      "side": "right"
+     }
+    ],
+    "lesion": [],
+    "expected": "a steering bias through PFL3 and DNa02"
+   }
+  ],
+  "id": "fruit-fly-synthetic",
+  "stats": {
+   "neurons": 5236,
+   "connections": 50128,
+   "synapses": 627323
+  },
+  "available": true
+ },
+ {
+  "id": "fruit-fly-larva",
+  "common_name": "Fruit fly larva",
+  "latin_name": "Drosophila melanogaster (larva)",
+  "status": "planned",
+  "summary": "The complete larval brain: 3,016 neurons with a fully mapped learning centre.",
+  "dataset": "Winding, M. et al. (2023). The connectome of an insect brain. Science 379, eadd9330.",
+  "available": false
+ },
+ {
+  "id": "fruit-fly-male-cns",
+  "common_name": "Fruit fly, male CNS",
+  "latin_name": "Drosophila melanogaster (male)",
+  "status": "planned",
+  "summary": "Brain plus nerve cord of the male fly, about 166,000 neurons, released in 2026.",
+  "dataset": "MaleCNS v1.0, Janelia FlyEM, Cambridge Connectomics and Google Research (2026).",
+  "available": false
+ },
+ {
+  "id": "ciona-larva",
+  "common_name": "Sea squirt larva",
+  "latin_name": "Ciona intestinalis",
+  "status": "planned",
+  "summary": "A tadpole shaped relative of vertebrates with 177 central neurons.",
+  "dataset": "Ryan, K. et al. (2016). The CNS connectome of a tadpole larva of Ciona intestinalis. eLife 5, e16962.",
+  "available": false
+ },
+ {
+  "id": "mouse-v1-microns",
+  "common_name": "Mouse visual cortex",
+  "latin_name": "Mus musculus",
+  "status": "planned",
+  "summary": "A cubic millimetre of mouse visual cortex with functional recordings of the same neurons.",
+  "dataset": "MICrONS Consortium (2025). Functional connectomics spanning multiple areas of mouse visual cortex. Nature.",
+  "available": false
+ },
+ {
+  "id": "human-h01",
+  "common_name": "Human cortex fragment",
+  "latin_name": "Homo sapiens",
+  "status": "planned",
+  "summary": "A cubic millimetre of human temporal cortex: about 57,000 cells and 150 million synapses.",
+  "dataset": "Shapson-Coe, A. et al. (2024). A petavoxel fragment of human cerebral cortex reconstructed at nanoscale resolution. Science 384, eadk4858.",
+  "available": false
+ }
+]

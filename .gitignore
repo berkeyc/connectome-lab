@@ -1,0 +1,8 @@
+# raw downloads and large datasets
+data/*
+!data/.gitkeep
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store

@@ -7,6 +7,7 @@
 Scientists have now mapped every neuron and synapse of a worm, a fly larva and an adult fly brain, and pieces of mouse and human cortex. These wiring diagrams (connectomes) are public, but using them takes a research group. Connectome Lab packages them in one open format and lets anyone:
 
 * **watch** real wiring drive a body: a worm backing away from a wall, a FlyWire circuit escaping a looming shadow;
+* **test** one real fly circuit on eight very different tasks in the Fly Gym, from feeding reflexes to poker;
 * **train** a readout on a fixed, real circuit and follow the learning curve and the neurons live;
 * **compare** every result with rewired, random and silenced circuits, the controls most viral demos leave out;
 * **build and share** new experiments as plain JSON (no code), and keep runs in an optional account;
@@ -39,6 +40,25 @@ The neural activity panel can switch between **spikes** and **simulated calcium 
 | Fly plays Minecraft | FlyWire | planned, local runner | |
 
 Numbers come from `npm run check:experiments` and the variant script in the same folder (headless, 3 seeds). Each experiment page shows the measured results and how senses map to neurons and neurons to movement; that mapping is a design choice, and everything in between is the connectome.
+
+## Fly Gym
+
+<p align="center"><img src="docs/img/fly-gym.jpg" width="80%" alt="Four Fly Gym tasks: the fly at a poker table, holding a course in a striped flight drum, choosing between two flowers, and chasing another fly"></p>
+
+[Eight very different tasks](https://connectome-lab-gamma.vercel.app/gym) for one real circuit: 1,846 FlyWire neurons wiring taste, smell, vision and self motion to the descending neurons and MN9, the proboscis motor neuron. Every task is measured on the real wiring and on rewired, random and silenced circuits with the same seed and budget (`web/scripts/gym-benchmark.ts`; trained tasks keep the readout of the last generation and are tested on five held out episodes).
+
+| Family | Task | Real wiring | Rewired, same degrees | Random | Silenced |
+|---|---|---|---|---|---|
+| Real behaviour, no training | Taste and feed (drops drunk in 3 × 40 s) | 28 sugar, 0 bitter | 0 sugar | 22 sugar, 11 bitter | |
+| Real behaviour, no training | Back away from a wall (3 × 40 s) | 22 back aways, 0 bumps | 14 back aways, 7 bumps | 69 back aways, all with no wall near | |
+| Game | Kuhn poker, chips per hand against an unseen opponent (best possible 0.30) | 0.01 (0.000 against the equilibrium player, the best possible) | −0.02 | −0.02 | −0.02 |
+| Game | Pong, hits minus misses with a faster ball | 2.88 | −2.31 | −1.43 | −3.69 |
+| Cognition | Odour T-maze with a delay (0 is chance) | 0.03 | 0.04 | 0.03 | 0.00 |
+| Cognition | Two flowers, reward per visit (0.5 chance, 0.8 best) | 0.57 | 0.50 | 0.50 | 0.50 |
+| Body | Hold a course in gusty flight (1 is on course) | 0.97 | 0.63 | 0.09 | 0.26 |
+| Body | Chase a moving target (closeness, 1 is touching) | 0.57 | 0.37 | 0.15 | 0.14 |
+
+The two reflexes reproduce the whole brain model of Shiu et al. (2024) in this cut circuit: sugar drives MN9, bitter silences it, and rewiring removes the reflex. The poker player learned to bet with the king and fold the rest, which never loses to the equilibrium player but is far from exploiting a maniac. The T-maze fails for every circuit, because the two odours barely reach the output neurons in this cut; the page says so instead of hiding it.
 
 ## Training
 

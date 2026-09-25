@@ -3,6 +3,7 @@
 
 import { PlateWorld, type PlateSpec } from "./chemotaxis";
 import { TrackWorld, type TrackSpec } from "./drive";
+import { GYM_TASKS } from "../gym/tasks";
 import type { Feature, TrainTask } from "./types";
 
 const DN_TYPES = ["DNa01", "DNa02", "DNa03", "DNb05", "DNa11", "DNp01", "MDN", "DNp09", "DNg13", "DNp03"];
@@ -91,6 +92,7 @@ export const TASKS: TrainTask[] = [
     createWorld: (spec, seed) => new PlateWorld(spec as PlateSpec, seed),
     inspiredBy: "Pierce-Shimomura et al. (1999) on the pirouette strategy, and Gray, Hill and Bargmann (2005) on the AIY, AIZ and RIA turning circuit.",
   },
+  ...GYM_TASKS,
 ];
 
 export const getTask = (id: string) => TASKS.find((t) => t.id === id);

@@ -14,6 +14,22 @@ const RUNS = { browser: "Runs in your browser", local: "Local runner", planned: 
 export default async function ExperimentsPage() {
   const lib = await getLibrary();
   const name = (id: string) => lib.find((s) => s.id === id)?.common_name ?? id;
+  const main = EXPERIMENTS.filter((e) => !e.id.startsWith("gym-"));
+  const gym = EXPERIMENTS.filter((e) => e.id.startsWith("gym-"));
+  const card = (e: (typeof EXPERIMENTS)[number], k: number) => (
+    <Link key={e.id} href={`/experiments/${e.id}`} className={`panel exp-card reveal ${k < 2 ? "wide" : ""}`} style={{ ["--i" as string]: k }}>
+      {e.createWorld ? <WorldThumb id={e.id} /> : <div className="exp-thumb" style={{ display: "grid", placeItems: "center", color: "var(--text-3)" }}>coming to the local runner</div>}
+      <div className="exp-body">
+        <div className="exp-meta">
+          <span className={`pill ${e.runsIn === "browser" ? "real" : "local"}`}>{RUNS[e.runsIn]}</span>
+          {e.brainKind === "synthetic" && <span className="pill synthetic">Teaching brain</span>}
+          <span className="pill">{name(e.localSpecies && e.runsIn !== "browser" ? e.localSpecies : e.species)}</span>
+        </div>
+        <h3>{e.title}</h3>
+        <p>{e.tagline}</p>
+      </div>
+    </Link>
+  );
   return (
     <div className="wrap">
       <div className="page-head">
@@ -27,21 +43,19 @@ export default async function ExperimentsPage() {
         </div>
       </div>
       <div className="exp-grid">
-        {EXPERIMENTS.map((e, k) => (
-          <Link key={e.id} href={`/experiments/${e.id}`} className={`panel exp-card reveal ${k < 2 ? "wide" : ""}`} style={{ ["--i" as string]: k }}>
-            {e.createWorld ? <WorldThumb id={e.id} /> : <div className="exp-thumb" style={{ display: "grid", placeItems: "center", color: "var(--text-3)" }}>coming to the local runner</div>}
-            <div className="exp-body">
-              <div className="exp-meta">
-                <span className={`pill ${e.runsIn === "browser" ? "real" : "local"}`}>{RUNS[e.runsIn]}</span>
-                {e.brainKind === "synthetic" && <span className="pill synthetic">Teaching brain</span>}
-                <span className="pill">{name(e.localSpecies && e.runsIn !== "browser" ? e.localSpecies : e.species)}</span>
-              </div>
-              <h3>{e.title}</h3>
-              <p>{e.tagline}</p>
-            </div>
-          </Link>
-        ))}
+        {main.map((e, k) => card(e, k))}
       </div>
+      <section className="gym-family" style={{ marginTop: 40 }}>
+        <div className="gym-family-head">
+          <div className="eyebrow">Fly Gym</div>
+          <h2>Eight tasks for one fly circuit</h2>
+          <p>
+            From feeding reflexes to poker, all on the same 1,846 FlyWire neurons and all measured against rewired, random and
+            silenced circuits. <Link href="/gym">See the scoreboard</Link>.
+          </p>
+        </div>
+        <div className="exp-grid">{gym.map((e, k) => card(e, k + 2))}</div>
+      </section>
       <section className="community-teaser">
         <div>
           <div className="eyebrow">From the community</div>

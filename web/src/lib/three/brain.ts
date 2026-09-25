@@ -336,7 +336,7 @@ export class FlyView {
   }
 
   /** turn: -1 left to 1 right; flap and walk 0 to 1. */
-  render(dtMs: number, opts: { turn: number; flap: number; walk: number; spin: boolean }) {
+  render(dtMs: number, opts: { turn: number; flap: number; walk: number; proboscis?: number; spin: boolean }) {
     const dt = Math.min(0.1, dtMs / 1000);
     this.t += dt;
     const want = (opts.spin ? this.t * 0.35 : 0.7) - opts.turn * 0.5;
@@ -347,7 +347,7 @@ export class FlyView {
     const hover = opts.flap > 0.02 ? 0.12 + Math.sin(this.t * 3) * 0.02 : 0;
     this.fly.position.y += (hover - this.fly.position.y) * (1 - Math.exp(-dt * 8));
     this.shadow.scale.setScalar(1 + this.fly.position.y * 1.5);
-    this.fly.animate(dt, { flap: opts.flap, walk: opts.walk });
+    this.fly.animate(dt, { flap: opts.flap, walk: opts.walk, proboscis: opts.proboscis ?? 0 });
     this.renderer.render(this.scene, this.camera);
   }
 

@@ -5,6 +5,7 @@ import { useAccount } from "@/lib/account/useAccount";
 
 const LINKS = [
   { href: "/experiments", label: "Experiments" },
+  { href: "/gym", label: "Gym" },
   { href: "/train", label: "Train" },
   { href: "/community", label: "Community" },
   { href: "/#library", label: "Library", match: "/species" },

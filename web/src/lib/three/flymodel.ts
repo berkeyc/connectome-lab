@@ -97,7 +97,8 @@ function materials(tier: Tier) {
   const wing = new THREE.MeshPhysicalMaterial({
     name: "wing",
     map: tex(L, base + "wing.webp", true, THREE.ClampToEdgeWrapping),
-    color: 0xffffff,
+    color: 0xb9c0c6, // a wing is mostly clear: keep it from turning into a white sheet under strong light
+    envMapIntensity: 0.6,
     roughness: 0.22,
     metalness: 0,
     transparent: true,
@@ -174,6 +175,7 @@ class RealFly {
   private wingPhase = 0;
   private spread = 0;
   private tSec = 0;
+  private prob = 0;
 
   constructor(template: THREE.Object3D) {
     this.root = template.clone(true);
@@ -219,7 +221,7 @@ class RealFly {
     }
   }
 
-  animate(dt: number, o: { flap: number; walk: number }) {
+  animate(dt: number, o: { flap: number; walk: number; proboscis?: number }) {
     dt = Math.min(dt, 0.05);
     this.tSec += dt;
     // wings: fold (0) or beat (1), with a short ease so take off does not snap
@@ -257,6 +259,10 @@ class RealFly {
     this.set("head", Math.sin(this.tSec * 0.45 + 1) * 0.05);
     this.set("antenna_left", Math.sin(this.tSec * 3.1) * 0.08);
     this.set("antenna_right", Math.sin(this.tSec * 2.7 + 0.5) * 0.08);
+    // proboscis: MN9 unfolds the rostrum and the haustellum
+    this.prob += ((o.proboscis ?? 0) - this.prob) * (1 - Math.exp(-dt * 12));
+    this.set("rostrum", -1.1 * this.prob);
+    this.set("haustellum", -1.4 * this.prob);
     this.apply();
   }
 
@@ -309,7 +315,7 @@ export class FlyActor extends THREE.Group {
     return this.real !== null;
   }
 
-  animate(dtSec: number, o: { flap: number; walk: number }) {
+  animate(dtSec: number, o: { flap: number; walk: number; proboscis?: number }) {
     this.tSec += dtSec;
     if (this.real) this.real.animate(dtSec, o);
     else if (this.proc) animateFly(this.proc, this.tSec, o);

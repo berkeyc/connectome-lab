@@ -526,3 +526,29 @@ div.train-canvas { position: relative; }
 .mini-btn:disabled { opacity: .7; cursor: progress; }
 .mini-select { font: 11px var(--mono); color: #e8eae6; background: rgba(255, 255, 255, 0.07); border: 0; border-radius: 999px; padding: 4px 8px; }
 .mini-select option { color: #111; }
+
+/* ---------- Fly Gym ---------- */
+.gym-how { margin-bottom: 8px; }
+.gym-family { margin-top: 36px; }
+.gym-family-head h2 { font-size: 24px; letter-spacing: -0.02em; margin: 0 0 4px; }
+.gym-family-head p { color: var(--text-2); margin: 0 0 14px; max-width: 70ch; }
+.gym-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+.gym-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); }
+.gym-card-head h3 { margin: 4px 0 4px; font-size: 19px; letter-spacing: -0.01em; }
+.gym-card-head p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+.gym-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.gym-table th { text-align: left; font-weight: 500; color: var(--text-2); padding: 5px 8px 5px 0; white-space: nowrap; }
+.gym-table td { padding: 5px 0; }
+.gym-table .num { font-family: var(--mono); text-align: right; white-space: nowrap; padding-left: 10px; }
+.gym-table tr.real th, .gym-table tr.real .num, .gym-table td.real { color: var(--text); font-weight: 600; }
+.gym-table.reflex thead th { font-size: 12px; color: var(--text-3); }
+.gym-bar { width: 100%; }
+.gym-bar span { display: block; height: 8px; border-radius: 4px; background: var(--line-strong); transition: width .6s var(--ease); }
+.gym-table tr.real .gym-bar span { background: var(--accent); }
+.gym-note { margin: 0; font-size: 13px; color: var(--text-2); }
+.gym-verdict { margin: 0; font-size: 13px; font-family: var(--mono); }
+.gym-verdict.good { color: var(--accent); }
+.gym-verdict.even { color: var(--text-2); }
+.gym-verdict.bad { color: var(--warn); }
+.gym-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+@media (max-width: 520px) { .gym-table th { white-space: normal; } }

@@ -5,6 +5,7 @@ import { RunnerWorld } from "./runner-game";
 import { PolicyWorld } from "../training/policy-world";
 import { getTask } from "../training/tasks";
 import { WormWorld } from "./worm";
+import { GYM_EXPERIMENTS } from "../gym/catalog";
 
 export const WORM_CHANNELS = [
   { id: "forward", label: "Forward command · AVB, PVC", targets: [{ cell_type: "AVB" }, { cell_type: "PVC" }], tone: "accent" as const },
@@ -228,5 +229,7 @@ export const EXPERIMENTS: ExperimentDef[] = [
     channels: [],
   },
 ];
+
+EXPERIMENTS.push(...GYM_EXPERIMENTS);
 
 export const getExperiment = (id: string) => EXPERIMENTS.find((e) => e.id === id);

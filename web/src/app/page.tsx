@@ -42,12 +42,15 @@ export default async function Home() {
         </div>
         <div className="reveal" style={{ ["--i" as string]: 1 }}>
           <p className="lede">
-            Every neuron and synapse of a worm and of a fly brain has been mapped. Here those maps escape shadows, find food
-            and drive cars, and you can train them yourself. Each result is shown next to rewired controls, so you can see
-            what the wiring really does.
+            Every neuron and synapse of a worm and of a fly brain has been mapped. Here those maps escape shadows, taste sugar,
+            drive cars and even play poker, and you can train them yourself. Each result is shown next to rewired controls, so
+            you can see what the wiring really does.
           </p>
           <div className="actions">
-            <Link className="btn primary" href="/train">
+            <Link className="btn primary" href="/gym">
+              Enter the Fly Gym
+            </Link>
+            <Link className="btn" href="/train">
               Train a connectome
             </Link>
             <Link className="btn" href="/experiments">

@@ -63,7 +63,7 @@ export type ExperimentDef = {
   smoothMs?: number;
   createWorld?: (seed: number) => World;
   /** Which 3D scene draws this world (none: the 2D map only). */
-  scene3d?: "track" | "loom" | "runner" | "plate";
+  scene3d?: "track" | "loom" | "runner" | "plate" | "gym";
   /** Simulation step override, ms (trained readouts use the training step). */
   dtMs?: number;
   /** Measured results, shown on the experiment page. */

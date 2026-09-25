@@ -32,6 +32,7 @@ function hudFor(s: Snap | null) {
   }
   if (s.kind === "loom") return { left: `Giant Fiber ${s.gf.toFixed(0)} Hz`, right: s.threat ? `object at ${s.threat.dist.toFixed(1)}` : "" };
   if (s.kind === "runner") return { left: `Giant Fiber ${s.gf.toFixed(0)} Hz`, right: s.dead ? "crashed" : "" };
+  if (s.kind === "gym") return s.hud;
   return { left: s.reversing ? "reversing" : "crawling forward", right: s.food ? `${(Math.hypot(s.head.x - s.food.x, s.head.y - s.food.y) * 45).toFixed(1)} mm to food` : "" };
 }
 
@@ -44,6 +45,7 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
   const hudR = useRef<HTMLSpanElement>(null);
   const sig = useRef<HTMLSpanElement>(null);
   const [camera, setCamera] = useState<CameraMode>(kind === "plate" ? "orbit" : "chase");
+  // gym scenes choose their own camera
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<ActivityMode>("spikes");
   const [indicator, setIndicator] = useState<Indicator>("GCaMP6s");
@@ -158,10 +160,11 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
         scene.render();
         bv?.render(dt, !reduce);
         if (fv) {
-          const turn = snap?.kind === "track" ? Math.max(-1, Math.min(1, snap.car.steer / 0.6)) : 0;
-          const flap = snap?.kind === "loom" ? (snap.jump ? 1 : 0) : snap?.kind === "runner" ? (snap.flyY > 0.05 ? 1 : 0) : 0;
-          const walk = snap?.kind === "runner" ? (snap.dead ? 0 : 1) : snap?.kind === "track" ? 0.6 : 0.2;
-          fv.render(dt, { turn, flap, walk, spin: !reduce && snap?.kind !== "track" });
+          const turn = snap?.kind === "track" ? Math.max(-1, Math.min(1, snap.car.steer / 0.6)) : snap?.kind === "gym" ? Math.max(-1, Math.min(1, (snap.fly.roll ?? 0) * 2)) : 0;
+          const flap = snap?.kind === "loom" ? (snap.jump ? 1 : 0) : snap?.kind === "runner" ? (snap.flyY > 0.05 ? 1 : 0) : snap?.kind === "gym" ? snap.fly.flap : 0;
+          const walk = snap?.kind === "runner" ? (snap.dead ? 0 : 1) : snap?.kind === "track" ? 0.6 : snap?.kind === "gym" ? snap.fly.walk : 0.2;
+          const proboscis = snap?.kind === "gym" ? snap.fly.proboscis : 0;
+          fv.render(dt, { turn, flap, walk, proboscis, spin: !reduce && snap?.kind !== "track" });
         }
         if (t - lastHud > 120) {
           lastHud = t;
@@ -221,7 +224,7 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
         </div>
         <div className="stage3d-bottom">
           <span ref={hudL} className="hud-val" />
-          {kind !== "runner" && (
+          {kind !== "runner" && kind !== "gym" && (
             <div className="cam-toggle" role="radiogroup" aria-label="Camera">
               {(["chase", "orbit"] as CameraMode[]).map((m) => (
                 <button key={m} role="radio" aria-checked={camera === m} className={camera === m ? "on" : ""} onClick={() => setCamera(m)}>

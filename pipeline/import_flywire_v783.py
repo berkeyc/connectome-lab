@@ -110,6 +110,34 @@ CIRCUITS = [
              "stimulate": [{"cell_type": "LPLC1", "side": "right"}], "lesion": [], "expected": "See which descending neurons respond."},
         ],
     },
+    {
+        "id": "fly-gym-circuit",
+        "common_name": "Fruit fly multisensory circuit (FlyWire)",
+        "summary": "Taste, smell, vision and self motion wired to the descending neurons that steer, walk, reverse and escape, and to the proboscis motor neuron MN9. The shared circuit of the Fly Gym tasks.",
+        "inputs": ["HSE", "HSN", "HSS", "LPLC1", "LC4", "LPLC2", "LC16", "ORN_DM1", "ORN_DA2"],
+        "input_sub_classes": ["sugar/water", "bitter"],
+        "outputs": ["DNa01", "DNa02", "DNa03", "DNb05", "DNa11", "DNp01", "MDN", "DNp09", "DNg13", "DNp03", "CB0701"],
+        "min_syn": 40,
+        "readouts": [
+            {"id": "feed", "label": "Proboscis (MN9)", "description": "MN9 (CB0701 in FlyWire), the motor neuron that extends the proboscis (Shiu et al. 2024).",
+             "positive": {"label": "MN9", "cell_types": ["CB0701"]}},
+            {"id": "steer", "label": "DNa02, right minus left", "description": "Steering descending neurons.",
+             "positive": {"label": "right", "cell_types": ["DNa02"], "side": "right"},
+             "negative": {"label": "left", "cell_types": ["DNa02"], "side": "left"}},
+            {"id": "backward", "label": "Moonwalker (MDN)", "description": "Backward walking command.",
+             "positive": {"label": "MDN", "cell_types": ["MDN"]}},
+        ],
+        "presets": [
+            {"id": "sugar", "label": "Taste sugar", "description": "Stimulate the sugar sensing gustatory receptor neurons of the labellum.",
+             "stimulate": [{"cell_type": "LB3"}, {"cell_type": "LB2d"}], "lesion": [],
+             "expected": "In the whole brain model: MN9 fires and the proboscis extends (Shiu et al. 2024)."},
+            {"id": "sugar-bitter", "label": "Sugar with bitter", "description": "Sugar and bitter receptor neurons together.",
+             "stimulate": [{"cell_type": "LB3"}, {"cell_type": "LB2d"}, {"cell_type": "LB1e"}, {"cell_type": "LB1c"}, {"cell_type": "LB1b"}], "lesion": [],
+             "expected": "In the whole brain model: bitter suppresses the sugar response of MN9 (Shiu et al. 2024)."},
+            {"id": "lc16", "label": "LC16 on both sides", "description": "LC16 activation makes real flies walk backwards (Wu et al. 2016).",
+             "stimulate": [{"cell_type": "LC16"}], "lesion": [], "expected": "In real flies: backward walking."},
+        ],
+    },
 ]
 
 
@@ -127,7 +155,7 @@ def load():
     conn = pd.read_parquet(RAW / "Connectivity_783.parquet",
                            columns=["Presynaptic_ID", "Postsynaptic_ID", "Connectivity"])
     ann = pd.read_csv(RAW / "Supplemental_file1_neuron_annotations.tsv", sep="\t", low_memory=False,
-                      usecols=["root_id", "pos_x", "pos_y", "pos_z", "super_class", "cell_class", "cell_type", "side", "top_nt", "top_nt_conf"])
+                      usecols=["root_id", "pos_x", "pos_y", "pos_z", "super_class", "cell_class", "cell_sub_class", "cell_type", "side", "top_nt", "top_nt_conf"])
     ann = ann.drop_duplicates("root_id").set_index("root_id")
     ids = pd.Index(np.union1d(conn.Presynaptic_ID.unique(), conn.Postsynaptic_ID.unique()))
     ann = ann.reindex(ids)
@@ -159,7 +187,7 @@ def conn_rows(conn: pd.DataFrame):
 
 
 def cut(conn, ann, spec):
-    S = set(ann.index[ann.cell_type.isin(spec["inputs"])])
+    S = set(ann.index[ann.cell_type.isin(spec["inputs"]) | ann.cell_sub_class.isin(spec.get("input_sub_classes", []))])
     O = set(ann.index[ann.cell_type.isin(spec["outputs"])])
     t = spec["min_syn"]
 
@@ -200,18 +228,21 @@ def main():
     if "--skip-full" not in sys.argv:
         write_species("fruit-fly-flywire", full_meta, neuron_rows(ann), conn_rows(conn), large=True)
 
+    only = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
     for spec in CIRCUITS:
+        if only and spec["id"] not in only:
+            continue
         keep, sub = cut(conn, ann, spec)
         meta = {
             "common_name": spec["common_name"], "latin_name": "Drosophila melanogaster", "status": "real",
             "parent": "fruit-fly-flywire", "summary": spec["summary"],
-            "dataset": f"Subcircuit of FlyWire v783: inputs {', '.join(spec['inputs'])}; outputs {', '.join(spec['outputs'])}; paths with at least {spec['min_syn']} synapses per step",
+            "dataset": f"Subcircuit of FlyWire v783: inputs {', '.join(spec['inputs'] + spec.get('input_sub_classes', []))}; outputs {', '.join(spec['outputs'])}; paths with at least {spec['min_syn']} synapses per step",
             "source_url": "https://flywire.ai", "license": LICENSE, "citations": CITATIONS,
             "caveats": COMMON_CAVEATS + [
                 "A subcircuit: neurons outside it are absent, so inputs they would provide are missing.",
-                f"Selection: all {', '.join(spec['inputs'])} and {', '.join(spec['outputs'])} neurons, plus neurons on paths of one or two steps between them with at least {spec['min_syn']} synapses per step. Every synapse among the selected neurons is kept."],
+                f"Selection: all {', '.join(spec['inputs'] + spec.get('input_sub_classes', []))} and {', '.join(spec['outputs'])} neurons, plus neurons on paths of one or two steps between them with at least {spec['min_syn']} synapses per step. Every synapse among the selected neurons is kept."],
             "sign": SIGN, "sim": SHIU_SIM, "readouts": spec["readouts"], "presets": spec["presets"],
-            "circuit": {"inputs": spec["inputs"], "outputs": spec["outputs"], "min_syn": spec["min_syn"]},
+            "circuit": {"inputs": spec["inputs"] + spec.get("input_sub_classes", []), "outputs": spec["outputs"], "min_syn": spec["min_syn"]},
         }
         write_species(spec["id"], meta, neuron_rows(ann, keep), conn_rows(sub))
 

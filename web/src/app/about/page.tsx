@@ -39,6 +39,25 @@ export default function About() {
           two step paths between them, with every synapse among the selected neurons kept. The escape circuit has 1,067
           neurons, the visuomotor circuit 1,325. Neurons outside a circuit are missing, and each circuit page says so.
         </p>
+        <p>
+          The <Link href="/gym">Fly Gym</Link> uses a third, multisensory circuit of 1,846 neurons: the sugar and bitter taste
+          neurons of the labellum, two olfactory receptor neuron types (DM1 and DA2), the motion sensing HS cells and four
+          visual projection neuron types (LPLC1, LC4, LPLC2, LC16), wired to ten descending neuron types on both sides and to
+          MN9 (CB0701), the proboscis motor neuron. In this circuit, as in the whole brain model of Shiu et al. (2024), sugar
+          drives MN9 at about 126 Hz and adding bitter silences it, with no tuning; the degree preserving rewired circuit
+          leaves MN9 silent.
+        </p>
+
+        <h2>The Fly Gym</h2>
+        <p>
+          Eight tasks in four families run on that one circuit: two reflexes that need no training (feeding, backing away
+          from a wall), two games (Kuhn poker, Pong), two cognitive tests (an odour T-maze with a delay, a two armed bandit)
+          and two tasks of body and movement (holding a course in gusty flight, chasing a moving target). For the six trained
+          tasks, <code>web/scripts/gym-benchmark.ts</code> trains the real circuit and each control with the same seed,
+          population and number of generations, keeps the readout of the last generation (never the one with the best held
+          out score) and tests it on five held out episodes. Sensory encodings in the games are arbitrary, and tasks that need
+          memory are expected to fail in a circuit without learning; the scoreboard shows both.
+        </p>
 
         <h2>Training</h2>
         <p>

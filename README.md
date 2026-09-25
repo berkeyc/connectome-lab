@@ -16,7 +16,9 @@ The core question behind every experiment: *how much behaviour can the wiring pr
 
 ## Experiments
 
-Brains in bodies, live in the browser, in 3D (three.js): a car in a small city, a fly on a table, a worm on an agar plate. Beside the scene, the circuit's neurons light up at their measured FlyWire positions as they spike, next to a model of the fly, and a sidebar shows the brain's signals as scrolling traces, every spike and an event log. A flat map view is one click away. Every fly experiment now runs on circuits cut from the real FlyWire connectome (v783).
+Brains in bodies, live in the browser, in 3D (three.js): a car in a small city, a fly on a table, a worm on an agar plate. Beside the scene, the circuit's neurons light up at their measured FlyWire positions as they spike, next to a model of the fly, and a sidebar shows the brain's signals as scrolling traces, every spike and an event log. A flat map view is one click away.
+
+The neural activity panel can switch between **spikes** and **simulated calcium imaging** (GCaMP6s, GCaMP6f or jGCaMP8f kinetics with saturation and shot noise, the way a microscope would see the circuit), shows the envelope of the whole fly brain fitted to all 138,639 FlyWire neuron positions (`pipeline/make_brain_surface.py`), and on request loads the **real skeletons** of up to 48 neurons of the circuit from the FlyWire v783 skeletons published by the Cambridge fly connectome group. Every fly experiment now runs on circuits cut from the real FlyWire connectome (v783).
 
 | Experiment | Circuit | Real wiring | Controls |
 |---|---|---|---|
@@ -49,6 +51,8 @@ Runs can be saved in the browser, exported and imported as JSON, and synced to a
 ## Community
 
 The [community page](https://connectome-lab-gamma.vercel.app/community) credits the connectome projects that went viral in 2026 (Fly Dino, Swat, the Beat Saber fly, the Minecraft and Doom flies, webgpu-fly and more) with their authors, their code and, where it matters, notes on what the method can show. Browser demos open in a separate window on their authors' own sites. Their code stays with their authors; we link, we do not copy. The main index is [awesome-fly](https://github.com/cobanov/awesome-fly) by Mert Cobanov.
+
+**BrainGenix-NES.** `local/nes_bridge.py` builds any FlyWire circuit of the library inside the Carboncopies Foundation's [BrainGenix-NES](https://github.com/carboncopies/BrainGenix-NES) (neurons with geometry, virtual calcium imaging and electron microscopy), runs it and saves the recording. It is our own client for NES's published JSON API, so no AGPL code enters this repository; it has been tested against a mock server, not yet against a live NES.
 
 Large experiments run on the **local runner**, a small Python program that simulates the brain on your computer and streams it to the site. The whole FlyWire brain loads in about 10 seconds and needs about 1 GB of memory. See [local/README.md](local/README.md).
 
@@ -153,7 +157,7 @@ db/             schema, views and analysis queries
 web/            Next.js site; engine in web/src/lib/engine, experiments in web/src/lib/experiments,
                 training in web/src/lib/training
 supabase/       database migrations for optional accounts (row level security on every table)
-local/          local runner for connectomes too big for a browser
+local/          local runner for connectomes too big for a browser, and the BrainGenix-NES bridge
 docs/           roadmap and contributor guides
 data/           large or raw downloads (not committed)
 ```
@@ -174,7 +178,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md): MaleCNS and the larval fly, NeuroML expo
 
 ## Related projects
 
-Open Source Brain and NeuroML (runnable model library), OpenWorm (worm data and simulation), FlyWire, Codex, neuPrint and MaleCNS (fly data), Shiu et al.'s Drosophila brain model, NeuroMechFly/FlyGym and flybody (fly bodies), Eon Systems (whole brain emulation), and the awesome-fly list. The [method page](https://connectome-lab-gamma.vercel.app/about) explains how Connectome Lab fits among them: every result is shown next to its controls.
+Open Source Brain and NeuroML (runnable model library), the Carboncopies Foundation's BrainGenix (NES simulator and the Brain Emulation Challenge), OpenWorm (worm data and simulation), FlyWire, Codex, neuPrint and MaleCNS (fly data), Shiu et al.'s Drosophila brain model, NeuroMechFly/FlyGym and flybody (fly bodies), Eon Systems (whole brain emulation), and the awesome-fly list. The [method page](https://connectome-lab-gamma.vercel.app/about) explains how Connectome Lab fits among them: every result is shown next to its controls.
 
 ## Citing the data
 

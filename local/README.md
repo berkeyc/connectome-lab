@@ -42,3 +42,19 @@ Plain JSON over WebSocket, so other tools (a Minecraft bridge, a robot, a notebo
 → {"type":"tick","id":1,"ms":20,"inputs":[{"targets":[{"cell_type":"LC4","side":"right"}],"hz":150}]}
 ← {"type":"tick","id":1,"rates":{"gf":42.0},"spikes":{"t":[...],"i":[...]},"active":311}
 ```
+
+## Protocol version
+
+Pages send `{"type":"hello"}` first; the runner answers with its protocol version (`1.1.0`) and supported operations. Pages refuse runners with a different major version and tell you to update.
+
+## BrainGenix-NES bridge (experimental)
+
+`nes_bridge.py` builds a library circuit inside a running [BrainGenix-NES](https://github.com/carboncopies/BrainGenix-NES) through the BrainGenix API, runs it and writes the recording:
+
+```bash
+pip install -r local/requirements.txt
+python local/nes_bridge.py fly-escape-circuit --inputs LC4 LPLC2 --ms 500            # NES API on localhost:8000
+python local/nes_bridge.py fly-escape-circuit --host api.braingenix.org --port 443 --https --token $NES_TOKEN
+```
+
+Each neuron becomes a 2 µm soma at its FlyWire position with a short axon and a ball and stick neuron; the strongest connections (20,000 by default) become receptors with a conductance proportional to the synapse count, negative for inhibitory transmitters. It is written from NES's published JSON protocol and checked against a mock server; it has not been run against a live NES yet.

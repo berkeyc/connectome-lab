@@ -328,7 +328,7 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
           raw = r.rates;
           const now = world.timeMs;
           const bus = busRef.current;
-          if (bus) for (const i of r.spikes.i) if (i < bus.n) bus.activity[i] = 1;
+          if (bus) for (const i of r.spikes.i) if (i < bus.n) bus.activity[i] += 1;
           for (let k = 0; k < r.spikes.i.length; k += 2) spikeBuf.push({ t: now + r.spikes.t[k], row: r.spikes.i[k] / n });
           while (spikeBuf.length && spikeBuf[0].t < now - 2000) spikeBuf.shift();
         }
@@ -417,7 +417,7 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
           if (graph.pos && graph.pos.length === n * 3) {
             const bus = { n, activity: new Float32Array(n) };
             busRef.current = bus;
-            setBrainGeo((prev) => (prev && prev.cls.length === n ? { ...prev, bus } : { pos: graph.pos!, cls: graph.cls, classes: graph.classes, bus }));
+            setBrainGeo((prev) => (prev && prev.cls.length === n ? { ...prev, bus } : { pos: graph.pos!, cls: graph.cls, classes: graph.classes, ids: graph.neuronIds, bus }));
           } else {
             busRef.current = null;
             setBrainGeo(null);

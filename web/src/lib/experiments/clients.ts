@@ -80,6 +80,7 @@ export class WorkerBrain implements BrainClient {
 }
 
 export const LOCAL_URL = "ws://localhost:8765";
+export const LOCAL_PROTOCOL_MAJOR = "1";
 
 export class LocalBrain implements BrainClient {
   private ws: WebSocket | null = null;
@@ -110,10 +111,27 @@ export class LocalBrain implements BrainClient {
         for (const p of this.pending.values()) p.reject(new Error("Local runner disconnected"));
         this.pending.clear();
       };
-      ws.onopen = () => ws.send(JSON.stringify({ type: "init", species: this.species, channels: this.channels, ...this.opts }));
+      // say hello first: runners older than protocol 1.1 do not answer it, so init goes out anyway after a short wait
+      let initSent = false;
+      const sendInit = () => {
+        if (initSent) return;
+        initSent = true;
+        ws.send(JSON.stringify({ type: "init", species: this.species, channels: this.channels, ...this.opts }));
+      };
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: "hello" }));
+        setTimeout(sendInit, 400);
+      };
       ws.onmessage = (e) => {
         const m = JSON.parse(e.data);
-        if (m.type === "ready") {
+        if (m.type === "hello") {
+          if (String(m.protocol ?? "").split(".")[0] !== LOCAL_PROTOCOL_MAJOR) {
+            fail(`The local runner speaks protocol ${m.protocol}; this page needs ${LOCAL_PROTOCOL_MAJOR}.x. Update the runner with git pull.`);
+            ws.close();
+            return;
+          }
+          sendInit();
+        } else if (m.type === "ready") {
           settled = true;
           resolve(m);
         } else if (m.type === "error") {

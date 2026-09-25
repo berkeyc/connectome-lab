@@ -81,6 +81,37 @@ export default function About() {
           <li>The synthetic teaching fly has a textbook circuit layout and invented numbers. Only the parking demo still uses it, and it is labelled.</li>
         </ul>
 
+        <h2>Seeing the circuit in 3D</h2>
+        <p>
+          The neural activity panel places every neuron of a FlyWire circuit at its measured position (a point on the neuron
+          from the FlyWire annotations, in micrometres). Around it, a faint shell shows the envelope of the whole fly brain:
+          a surface fitted to the positions of all 138,639 FlyWire neurons (smoothed on a 6 micrometre grid). It shows where
+          neurons are; it is not an anatomical neuropil mesh.
+        </p>
+        <p>
+          <strong>Real shapes.</strong> On request, the panel loads the real skeletons of up to 48 neurons of the circuit
+          (descending neurons first) from the FlyWire v783 skeletons published by the Cambridge fly connectome group, the
+          same source used by the fafbseg library. They are fetched by your browser and never stored by us.
+        </p>
+        <p>
+          <strong>Simulated calcium imaging.</strong> Real experiments rarely see spikes directly; they watch a fluorescent
+          calcium indicator. The calcium view turns the simulated spikes into what such a microscope would show: each spike
+          raises the indicator along a rising and a decaying exponential, the signal saturates, and shot noise is added.
+          Kinetics are approximate single spike values for GCaMP6s, GCaMP6f and jGCaMP8f (Chen et al. 2013, Zhang et al.
+          2023). The idea follows the virtual calcium imaging in BrainGenix-NES; the implementation is our own.
+        </p>
+
+        <h2 id="nes">Running a circuit in BrainGenix-NES</h2>
+        <p>
+          <a href="https://github.com/carboncopies/BrainGenix-NES">BrainGenix-NES</a>, from the Carboncopies Foundation,
+          simulates neurons with geometry and renders virtual electron microscopy and calcium imaging.{" "}
+          <code>local/nes_bridge.py</code> builds any FlyWire circuit of the library inside a running NES: a soma at each
+          neuron&apos;s position, a ball and stick neuron, one receptor per connection (strongest first, signed by
+          transmitter), spontaneous input to chosen cell types, then it runs, records and saves the result. It is our own
+          client, written from NES&apos;s published JSON protocol, so no AGPL code enters this MIT project. It has been
+          checked against a mock server but not yet against a live NES; field names may need updating as their API evolves.
+        </p>
+
         <h2>Who else works on this, and where we fit</h2>
         <p>
           We looked for people and institutions building a library like this one. Nobody offers exactly this combination, but

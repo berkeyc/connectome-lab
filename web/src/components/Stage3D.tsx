@@ -3,11 +3,14 @@
 // connectome driving demos: the circuit's neurons at their real positions,
 // flashing as they spike, and the fly whose brain it is.
 import { useEffect, useRef, useState } from "react";
-import type { SpikeBus } from "@/lib/three/brain";
+import type { ActivityMode, BrainView as BrainViewT, Indicator, SpikeBus } from "@/lib/three/brain";
+import { SKELETON_CREDIT } from "@/lib/three/skeletons";
 import type { CameraMode, SceneKind } from "@/lib/three/scenes";
 import { signalOf, type Snap } from "@/lib/three/snap";
 
-export type BrainGeometry = { pos: number[]; cls: number[]; classes: string[]; bus: SpikeBus };
+export type BrainGeometry = { pos: number[]; cls: number[]; classes: string[]; ids?: string[]; bus: SpikeBus };
+
+const INDICATOR_NAMES: Indicator[] = ["GCaMP6s", "GCaMP6f", "jGCaMP8f"];
 
 type Props = {
   kind: SceneKind;
@@ -39,6 +42,11 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
   const sig = useRef<HTMLSpanElement>(null);
   const [camera, setCamera] = useState<CameraMode>(kind === "plate" ? "orbit" : "chase");
   const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<ActivityMode>("spikes");
+  const [indicator, setIndicator] = useState<Indicator>("GCaMP6s");
+  const [shapes, setShapes] = useState<"off" | "loading" | "on" | "failed">("off");
+  const [shapeProgress, setShapeProgress] = useState("");
+  const bvRef = useRef<BrainViewT | null>(null);
   const camRef = useRef(camera);
   const getRef = useRef(getSnap);
   useEffect(() => {
@@ -58,7 +66,16 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
         return;
       }
       const scene = createScene(kind, main.current);
-      const bv = brain && brainC.current ? new BrainView(brainC.current, brain.pos, brain.cls, brain.classes, brain.bus) : null;
+      // the whole brain envelope, fitted to all FlyWire neuron positions (FlyWire circuits only)
+      let surface: { v: number[]; f: number[] } | null = null;
+      if (brain?.ids?.[0] && /^\d{15,20}$/.test(brain.ids[0])) {
+        surface = await fetch("/data/species/fruit-fly-flywire/surface.json")
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null);
+        if (!alive) return;
+      }
+      const bv = brain && brainC.current ? new BrainView(brainC.current, { ...brain, surface }) : null;
+      bvRef.current = bv;
       const fv = showFly && flyC.current ? new FlyView(flyC.current) : null;
       const sizes = new Map<HTMLCanvasElement, string>();
       const fit = (c: HTMLCanvasElement | null, r: { resize(w: number, h: number): void } | null) => {
@@ -102,6 +119,7 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
       };
       raf = requestAnimationFrame(frame);
       cleanup = () => {
+        bvRef.current = null;
         scene.dispose();
         bv?.dispose();
         fv?.dispose();
@@ -116,6 +134,25 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, brain, showFly]);
 
+  useEffect(() => {
+    bvRef.current?.setMode(mode);
+    bvRef.current?.setIndicator(indicator);
+  }, [mode, indicator, loading]);
+
+  const toggleShapes = async () => {
+    const bv = bvRef.current;
+    if (!bv) return;
+    if (shapes === "on") {
+      bv.hideShapes();
+      setShapes("off");
+      return;
+    }
+    setShapes("loading");
+    const n = await bv.loadShapes(48, (d, t) => setShapeProgress(`${d}/${t}`));
+    setShapes(n > 0 ? "on" : "failed");
+  };
+
+  const flywire = Boolean(brain?.ids?.[0] && /^\d{15,20}$/.test(brain.ids[0]));
   const panels = Boolean(brain) || showFly;
   return (
     <div className={`stage3d ${compact ? "compact" : ""} ${panels ? "with-panels" : ""}`}>
@@ -143,7 +180,32 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
         <div className="stage3d-panels">
           {brain && (
             <div className="panel3d">
-              <span className="panel3d-label">Neural activity · {brain.cls.length.toLocaleString("en")} neurons at their FlyWire positions</span>
+              <span className="panel3d-label">
+                {mode === "calcium" ? "Simulated calcium imaging" : "Neural activity"} · {brain.cls.length.toLocaleString("en")} neurons at their FlyWire positions
+              </span>
+              <div className="panel3d-tools">
+                <div className="mini-seg" role="radiogroup" aria-label="Activity view">
+                  {(["spikes", "calcium"] as ActivityMode[]).map((m) => (
+                    <button key={m} role="radio" aria-checked={mode === m} className={mode === m ? "on" : ""} onClick={() => setMode(m)}>
+                      {m === "spikes" ? "Spikes" : "Calcium"}
+                    </button>
+                  ))}
+                </div>
+                {mode === "calcium" && (
+                  <select className="mini-select" value={indicator} onChange={(e) => setIndicator(e.target.value as Indicator)} aria-label="Calcium indicator">
+                    {INDICATOR_NAMES.map((i) => (
+                      <option key={i} value={i}>
+                        {i}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {flywire && (
+                  <button className={`mini-btn ${shapes === "on" ? "on" : ""}`} onClick={() => void toggleShapes()} disabled={shapes === "loading"} title={SKELETON_CREDIT}>
+                    {shapes === "loading" ? `Loading shapes ${shapeProgress}` : shapes === "on" ? "Hide shapes" : shapes === "failed" ? "Shapes unavailable" : "Real shapes"}
+                  </button>
+                )}
+              </div>
               <canvas ref={brainC} aria-label="Neurons of the circuit in 3D, flashing when they spike" />
             </div>
           )}

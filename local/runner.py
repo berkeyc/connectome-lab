@@ -48,6 +48,8 @@ DEFAULT_ORIGINS = [
 ]
 MAX_MESSAGE = 1 << 20  # 1 MB per message is plenty for inputs and channel lists
 MAX_TARGETS = 256
+PROTOCOL = "1.1.0"  # major changes break old pages; the page checks it with a hello message
+OPS = ["hello", "init", "tick"]
 
 
 # --------------------------------------------------------------------------
@@ -244,6 +246,10 @@ class Server:
                 msg = json.loads(raw)
                 if not isinstance(msg, dict):
                     raise ValueError("Bad message")
+                if msg["type"] == "hello":
+                    await ws.send(json.dumps({"type": "hello", "protocol": PROTOCOL, "ops": OPS,
+                                              "species": self.args.use or None}))
+                    continue
                 if msg["type"] == "init":
                     if len(msg.get("channels", [])) > 64 or len(msg.get("lesion", [])) > MAX_TARGETS:
                         raise ValueError("Too many channels or lesions")

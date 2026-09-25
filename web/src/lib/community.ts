@@ -153,6 +153,24 @@ export const COMMUNITY: CommunityExperiment[] = [
   { title: "flyvis", author: "TuragaLab", repo: "https://github.com/TuragaLab/flyvis", kind: "tools", brain: "Connectome constrained visual system", what: "PyTorch models of the fly visual system trained under connectome constraints." },
   { title: "train-your-fly", author: "eudald-seeslab", repo: "https://github.com/eudald-seeslab/train-your-fly", kind: "tools", brain: "Connectome constrained graph networks", what: "A toolkit for training vision models whose wiring follows the fly connectome." },
   { title: "Open Source Brain", author: "Open Source Brain", repo: "https://www.opensourcebrain.org/", kind: "tools", brain: "Many species and models", what: "The closest existing library of runnable neuroscience models, built on NeuroML. A natural home for exporting our circuits." },
+  {
+    title: "BrainGenix-NES",
+    author: "Carboncopies Foundation",
+    repo: "https://github.com/carboncopies/BrainGenix-NES",
+    kind: "tools",
+    brain: "Neurons with geometry, virtual calcium imaging and electron microscopy",
+    what: "A whole brain emulation simulator that can also render what a microscope would see. Our simulated calcium imaging view follows the same idea, and our NES bridge builds any FlyWire circuit from the library inside NES.",
+    note: "AGPL 3.0. We talk to it over its documented API and use none of its code.",
+    ours: { href: "/about#nes", label: "How we connect to NES" },
+  },
+  {
+    title: "Brain Emulation Challenge",
+    author: "Carboncopies Foundation",
+    repo: "https://github.com/carboncopies/BrainEmulationChallenge",
+    kind: "tools",
+    brain: "Small ground truth circuits (XOR, adder, memory)",
+    what: "Standardised circuits with known wiring, a submission format and a scorecard for how well an emulation matches the original. A model for fair benchmarks on real connectomes.",
+  },
   { title: "OpenWorm", author: "OpenWorm", repo: "https://github.com/openworm/ConnectomeToolbox", kind: "tools", brain: "C. elegans", what: "Open worm connectome datasets and tools; our worm data comes from their ConnectomeToolbox." },
 
   // ---- data

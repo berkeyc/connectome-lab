@@ -518,3 +518,11 @@ input[type="range"] { accent-color: var(--accent); }
 }
 .train-canvas .stage3d { height: 100%; }
 div.train-canvas { position: relative; }
+.panel3d-tools { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.mini-seg { display: inline-flex; padding: 2px; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
+.mini-seg button, .mini-btn { border: 0; background: transparent; color: #b9bfb8; font: 11px/1 var(--mono); padding: 5px 9px; border-radius: 999px; cursor: pointer; }
+.mini-seg button.on, .mini-btn.on { background: #e8eae6; color: #111; }
+.mini-btn { background: rgba(255, 255, 255, 0.07); }
+.mini-btn:disabled { opacity: .7; cursor: progress; }
+.mini-select { font: 11px var(--mono); color: #e8eae6; background: rgba(255, 255, 255, 0.07); border: 0; border-radius: 999px; padding: 4px 8px; }
+.mini-select option { color: #111; }

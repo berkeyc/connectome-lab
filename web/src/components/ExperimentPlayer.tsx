@@ -112,7 +112,7 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
           if (g.pos && g.pos.length === g.neuronIds.length * 3) {
             const bus = { n: g.neuronIds.length, activity: new Float32Array(g.neuronIds.length) };
             busRef.current = bus;
-            setBrainGeo((prev) => (prev && prev.cls.length === g.cls.length ? { ...prev, bus } : { pos: g.pos!, cls: g.cls, classes: g.classes, bus }));
+            setBrainGeo((prev) => (prev && prev.cls.length === g.cls.length ? { ...prev, bus } : { pos: g.pos!, cls: g.cls, classes: g.classes, ids: g.neuronIds, bus }));
           }
           const m = def.dtMs ? { ...meta, sim: { ...meta.sim, dt_ms: def.dtMs } } : meta;
           client = new WorkerBrain(g, m, def.channels, { brain: brainVariant, seed, lesion: [] });
@@ -140,7 +140,7 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
         const res = await client.tick(inputs, TICK_MS);
         if (!alive) return;
         const bus = busRef.current;
-        if (bus) for (const i of res.spikes.i) if (i < bus.n) bus.activity[i] = 1;
+        if (bus) for (const i of res.spikes.i) if (i < bus.n) bus.activity[i] += 1;
         const smooth = smoother.update(res.rates, TICK_MS);
         world.act(smooth, TICK_MS);
         const now = world.timeMs;

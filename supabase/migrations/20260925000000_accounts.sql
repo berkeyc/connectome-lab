@@ -112,3 +112,8 @@ create trigger training_runs_touch before update on public.training_runs
   for each row execute function public.touch_updated_at();
 create trigger community_experiments_touch before update on public.community_experiments
   for each row execute function public.touch_updated_at();
+
+create index if not exists community_experiments_user on public.community_experiments (user_id);
+
+-- the signup trigger function must not be callable through the API
+revoke execute on function public.handle_new_user() from anon, authenticated, public;

@@ -9,6 +9,7 @@
 
 import type { Target } from "../engine/types";
 import type { Metric, SenseInput, Theme } from "../experiments/types";
+import type { Snap } from "../three/snap";
 
 /** A world that takes actions in [-1, 1] and scores the episode. */
 export interface TrainWorld {
@@ -20,6 +21,7 @@ export interface TrainWorld {
   metrics(): Metric[];
   drainEvents(): string[];
   draw(ctx: CanvasRenderingContext2D, w: number, h: number, theme: Theme): void;
+  snapshot?(): Snap;
 }
 
 export type Feature = { id: string; label: string; targets: Target[] };

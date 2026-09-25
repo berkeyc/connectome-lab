@@ -4,6 +4,7 @@
 // Giant Fiber, and a Giant Fiber burst makes the fly hop, exactly as in the
 // looming escape experiment.
 
+import type { RunnerSnap } from "../three/snap";
 import { clamp, mulberry, type Metric, type SenseInput, type Theme, type World } from "./types";
 
 type Obstacle = { x: number; w: number; h: number; kind: "drop" | "stone" | "spider"; cleared: boolean };
@@ -126,6 +127,18 @@ export class RunnerWorld implements World {
     this.lastTheta = 0;
     this.spawn(14);
     this.events.push(`Run ${this.runs} starts`);
+  }
+
+  snapshot(): RunnerSnap {
+    return {
+      kind: "runner",
+      obstacles: this.obstacles.map(({ x, w, h, kind }) => ({ x, w, h, kind })),
+      flyX: FLY_X,
+      flyY: this.flyY(),
+      dead: this.deadAt !== null,
+      scroll: this.scroll,
+      gf: this.gf,
+    };
   }
 
   get stats() {

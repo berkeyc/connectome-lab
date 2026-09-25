@@ -2,6 +2,7 @@
 // connectome's motor neurons move a body or a vehicle in that world.
 
 import type { Target } from "../engine/types";
+import type { Snap } from "../three/snap";
 
 export type Theme = {
   bg: string;
@@ -39,6 +40,8 @@ export interface World {
   drainEvents(): string[];
   /** Brain time since start, ms. */
   timeMs: number;
+  /** State for the 3D view, if the world has one. */
+  snapshot?(): Snap;
 }
 
 export type ExperimentDef = {
@@ -59,6 +62,8 @@ export type ExperimentDef = {
   /** Rate smoothing time constant for motor channels. */
   smoothMs?: number;
   createWorld?: (seed: number) => World;
+  /** Which 3D scene draws this world (none: the 2D map only). */
+  scene3d?: "track" | "loom" | "runner" | "plate";
   /** Simulation step override, ms (trained readouts use the training step). */
   dtMs?: number;
   /** Measured results, shown on the experiment page. */

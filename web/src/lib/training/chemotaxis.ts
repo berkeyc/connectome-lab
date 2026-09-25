@@ -5,6 +5,7 @@
 
 import { clamp, mulberry, type Metric, type SenseInput, type Theme } from "../experiments/types";
 import type { Target } from "../engine/types";
+import type { PlateSnap } from "../three/snap";
 import type { EpisodeSpec, TrainWorld } from "./types";
 
 /** Which neurons fire when the odour gets weaker (down) or stronger (up). */
@@ -86,6 +87,10 @@ export class PlateWorld implements TrainWorld {
       this.trail.push({ ...this.head });
       if (this.trail.length > 800) this.trail.shift();
     }
+  }
+
+  snapshot(): PlateSnap {
+    return { kind: "plate", head: this.head, heading: this.heading, trail: this.trail.slice(-240), food: { x: this.spec.fx, y: this.spec.fy }, foodSigma: SIGMA, reversing: false, touching: false };
   }
 
   /** Mean closeness to the food over the episode, 0 (plate width away) to 100 (on it). */

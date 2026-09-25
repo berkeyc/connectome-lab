@@ -6,6 +6,7 @@ import { getExperiment } from "@/lib/experiments/catalog";
 import { LocalBrain, LOCAL_URL, WorkerBrain, type BrainClient, type ReadyInfo } from "@/lib/experiments/clients";
 import { Smoother } from "@/lib/experiments/loop";
 import type { Metric, Theme, World } from "@/lib/experiments/types";
+import Stage3D, { type BrainGeometry } from "@/components/Stage3D";
 import { fitCanvas, readTheme } from "@/lib/canvas";
 import { CLASS_ORDER } from "@/lib/raster";
 
@@ -44,12 +45,19 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
   const [log, setLog] = useState<{ t: number; text: string }[]>([]);
   const [perf, setPerf] = useState({ realtime: 1, active: 0, neurons: 0 });
   const [generation, setGeneration] = useState(0);
+  const [view, setView] = useState<"3d" | "2d">(def.scene3d ? "3d" : "2d");
+  const [brainGeo, setBrainGeo] = useState<BrainGeometry | null>(null);
+  const worldRef = useRef<World | null>(null);
+  const busRef = useRef<BrainGeometry["bus"] | null>(null);
+  const viewRef = useRef(view);
+  const getSnap = useCallback(() => worldRef.current?.snapshot?.() ?? null, []);
   const runningRef = useRef(running);
   const speedRef = useRef(speed);
   useEffect(() => {
     runningRef.current = running;
     speedRef.current = speed;
-  }, [running, speed]);
+    viewRef.current = view;
+  }, [running, speed, view]);
 
   const restart = useCallback(() => setGeneration((g) => g + 1), []);
 
@@ -58,6 +66,7 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
     let client: BrainClient | null = null;
     let raf = 0;
     const world: World = def.createWorld!(seed);
+    worldRef.current = world;
     const smoother = new Smoother(def.smoothMs ?? 100);
     const traceBuf: Record<string, { t: number; v: number }[]> = Object.fromEntries(shown.map((c) => [c.id, []]));
     const spikes: { t: number; row: number }[] = [];
@@ -100,6 +109,11 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
           if (!meta) throw new Error("This experiment only runs on the local runner.");
           const g: Graph = await (await fetch(`/data/species/${def.species}/graph.json`)).json();
           if (!alive) return;
+          if (g.pos && g.pos.length === g.neuronIds.length * 3) {
+            const bus = { n: g.neuronIds.length, activity: new Float32Array(g.neuronIds.length) };
+            busRef.current = bus;
+            setBrainGeo((prev) => (prev && prev.cls.length === g.cls.length ? { ...prev, bus } : { pos: g.pos!, cls: g.cls, classes: g.classes, bus }));
+          }
           const m = def.dtMs ? { ...meta, sim: { ...meta.sim, dt_ms: def.dtMs } } : meta;
           client = new WorkerBrain(g, m, def.channels, { brain: brainVariant, seed, lesion: [] });
         }
@@ -125,6 +139,8 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
       try {
         const res = await client.tick(inputs, TICK_MS);
         if (!alive) return;
+        const bus = busRef.current;
+        if (bus) for (const i of res.spikes.i) if (i < bus.n) bus.activity[i] = 1;
         const smooth = smoother.update(res.rates, TICK_MS);
         world.act(smooth, TICK_MS);
         const now = world.timeMs;
@@ -224,8 +240,8 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
       if (!alive) return;
       const dt = Math.min(100, nowWall - last);
       last = nowWall;
-      if (stage.current) {
-        theme ??= readTheme(stage.current);
+      if (traces.current) {
+        theme ??= readTheme(traces.current);
         if (runningRef.current && !failed) {
           budget += dt * speedRef.current;
           wallAcc += dt;
@@ -235,8 +251,10 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
             doTick();
           }
         }
-        const { ctx, w, h } = fitCanvas(stage.current);
-        world.draw(ctx, w, h, theme);
+        if (stage.current && viewRef.current === "2d") {
+          const { ctx, w, h } = fitCanvas(stage.current);
+          world.draw(ctx, w, h, theme);
+        }
         drawTraces();
         drawRaster();
         if (nowWall - lastUi > 250) {
@@ -267,7 +285,18 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
     <div className={`player ${compact ? "compact" : ""}`}>
       <div className="player-main panel">
         <div className="stage-wrap">
-          <canvas ref={stage} className="stage" aria-label={`Live simulation: ${def.title}`} />
+          {view === "3d" && def.scene3d ? (
+            <Stage3D
+              kind={def.scene3d}
+              getSnap={getSnap}
+              brain={source === "browser" ? brainGeo : null}
+              showFly={def.species !== "c-elegans"}
+              compact={compact}
+              onUnavailable={() => setView("2d")}
+            />
+          ) : (
+            <canvas ref={stage} className="stage" aria-label={`Live simulation: ${def.title}`} />
+          )}
           <div className="stage-badges">
             <span className={`pill ${status === "ready" ? "real" : ""}`}>
               <span className={`dot ${status === "ready" && running ? "live" : ""}`} />
@@ -322,6 +351,16 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
               Seed
               <input type="number" min={1} value={seed} onChange={(e) => setSeed(Math.max(1, Number(e.target.value) || 1))} />
             </label>
+            {def.scene3d && (
+              <div className="segmented small-seg" role="group" aria-label="View">
+                <button className={view === "3d" ? "on" : ""} onClick={() => setView("3d")}>
+                  3D
+                </button>
+                <button className={view === "2d" ? "on" : ""} onClick={() => setView("2d")}>
+                  Map
+                </button>
+              </div>
+            )}
             <div className="segmented small-seg" role="group" aria-label="Where the brain runs">
               <button className={source === "browser" ? "on" : ""} disabled={!canBrowser} onClick={() => setSource("browser")}>
                 Browser

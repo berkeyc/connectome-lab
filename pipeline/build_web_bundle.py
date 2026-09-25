@@ -73,6 +73,9 @@ def build(species_id: str):
             "gap": {"pre": [a for a, _ in gap], "post": [b for _, b in gap],
                     "w": list(gap.values())},
         }
+        # neuron positions (micrometres), when the dataset has them: used by the 3D brain view
+        if all(n.get("x") not in (None, "", "nan") for n in neurons):
+            graph["pos"] = [round(float(n[k])) for n in neurons for k in ("x", "y", "z")]
         (out_dir / "graph.json").write_text(json.dumps(graph, separators=(",", ":")))
 
     # --- summary for the species page -------------------------------------

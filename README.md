@@ -16,7 +16,7 @@ The core question behind every experiment: *how much behaviour can the wiring pr
 
 ## Experiments
 
-Brains in bodies, live in the browser. The world feeds the senses, the connectome moves the body, and a sidebar shows the brain's signals as scrolling traces, every spike, and an event log. Every fly experiment now runs on circuits cut from the real FlyWire connectome (v783).
+Brains in bodies, live in the browser, in 3D (three.js): a car in a small city, a fly on a table, a worm on an agar plate. Beside the scene, the circuit's neurons light up at their measured FlyWire positions as they spike, next to a model of the fly, and a sidebar shows the brain's signals as scrolling traces, every spike and an event log. A flat map view is one click away. Every fly experiment now runs on circuits cut from the real FlyWire connectome (v783).
 
 | Experiment | Circuit | Real wiring | Controls |
 |---|---|---|---|

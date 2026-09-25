@@ -3,6 +3,7 @@
 // onto the Giant Fiber, compass neurons EPG onto PFL3 onto the steering neurons
 // DNa02, bristle touch onto the moonwalker neurons MDN) with invented weights.
 
+import type { LoomSnap } from "../three/snap";
 import { clamp, mulberry, wrapAngle, type Metric, type SenseInput, type Theme, type World } from "./types";
 
 type P = { x: number; y: number };
@@ -118,6 +119,15 @@ export class LoomingWorld implements World {
       this.threat = null;
       this.nextThreatAt = this.timeMs + 1500 + this.rnd() * 1500;
     }
+  }
+
+  snapshot(): LoomSnap {
+    return {
+      kind: "loom",
+      threat: this.threat ? { side: this.threat.side, dist: this.threat.dist } : null,
+      jump: this.jump ? { k: Math.min(1, (this.timeMs - this.jump.start) / 1400), dir: this.jump.dir } : null,
+      gf: this.gf,
+    };
   }
 
   get stats() {

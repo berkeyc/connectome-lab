@@ -127,7 +127,7 @@ def load():
     conn = pd.read_parquet(RAW / "Connectivity_783.parquet",
                            columns=["Presynaptic_ID", "Postsynaptic_ID", "Connectivity"])
     ann = pd.read_csv(RAW / "Supplemental_file1_neuron_annotations.tsv", sep="\t", low_memory=False,
-                      usecols=["root_id", "super_class", "cell_class", "cell_type", "side", "top_nt", "top_nt_conf"])
+                      usecols=["root_id", "pos_x", "pos_y", "pos_z", "super_class", "cell_class", "cell_type", "side", "top_nt", "top_nt_conf"])
     ann = ann.drop_duplicates("root_id").set_index("root_id")
     ids = pd.Index(np.union1d(conn.Presynaptic_ID.unique(), conn.Postsynaptic_ID.unique()))
     ann = ann.reindex(ids)
@@ -145,6 +145,10 @@ def neuron_rows(ann: pd.DataFrame, keep=None):
         "side": sub.side.fillna("center").values,
         "nt_type": sub.top_nt.map(lambda t: NT_CODE.get(t, "")).values,
         "nt_score": sub.top_nt_conf.round(2).values,
+        # FlyWire positions are in voxels of 4 x 4 x 40 nm; stored in micrometres
+        "x": (sub.pos_x * 0.004).round(1).values,
+        "y": (sub.pos_y * 0.004).round(1).values,
+        "z": (sub.pos_z * 0.040).round(1).values,
     })
     return rows.to_dict("records")
 

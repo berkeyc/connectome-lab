@@ -20,7 +20,8 @@ ROOT = Path(__file__).resolve().parent.parent
 SPECIES_DIR = ROOT / "species"
 LARGE_DIR = ROOT / "data" / "species"
 
-NEURON_COLS = ["neuron_id", "super_class", "class", "cell_type", "side", "nt_type", "nt_score"]
+NEURON_COLS = ["neuron_id", "super_class", "class", "cell_type", "side", "nt_type", "nt_score",
+               "x", "y", "z"]  # x, y, z: a point on the neuron in micrometres, optional
 CONN_COLS = ["pre_id", "post_id", "region", "syn_type", "syn_count"]
 
 # Standard super classes. Species may use a subset; the web app colours by these.

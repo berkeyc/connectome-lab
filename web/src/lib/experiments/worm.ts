@@ -2,6 +2,7 @@
 // past positions make up the body; the connectome decides crawl direction
 // (forward and backward command interneurons) and head bending.
 
+import type { PlateSnap } from "../three/snap";
 import { clamp, mulberry, type Metric, type SenseInput, type Theme, type World } from "./types";
 
 type P = { x: number; y: number };
@@ -150,6 +151,19 @@ export class WormWorld implements World {
         this.events.push(`Reached the food after ${(this.timeMs / 1000).toFixed(1)} s`);
       }
     }
+  }
+
+  snapshot(): PlateSnap {
+    return {
+      kind: "plate",
+      head: this.head,
+      heading: this.heading,
+      trail: this.trail.slice(-240),
+      food: this.food,
+      foodSigma: 0.35,
+      reversing: this.reversing,
+      touching: this.touching,
+    };
   }
 
   distanceToFood() {

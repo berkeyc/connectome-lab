@@ -3,6 +3,7 @@
 // learning curve, the brain's activity and the body all visible while it trains.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LearningCurve from "@/components/LearningCurve";
+import Stage3D, { type BrainGeometry } from "@/components/Stage3D";
 import { fitCanvas, readTheme } from "@/lib/canvas";
 import type { Graph, SpeciesMeta } from "@/lib/engine/types";
 import { WorkerBrain, type BrainClient } from "@/lib/experiments/clients";
@@ -54,6 +55,12 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
   const [hasRun, setHasRun] = useState(false);
 
   const stage = useRef<HTMLCanvasElement>(null);
+  const worldRef = useRef<TrainWorld | null>(null);
+  const busRef = useRef<BrainGeometry["bus"] | null>(null);
+  const [brainGeo, setBrainGeo] = useState<BrainGeometry | null>(null);
+  const [use3d, setUse3d] = useState(true);
+  const getSnap = useCallback(() => worldRef.current?.snapshot?.() ?? null, []);
+  const sceneKind = useMemo(() => task.createWorld(task.train[0], 1).snapshot?.().kind ?? null, [task]);
   const bars = useRef<HTMLCanvasElement>(null);
   const raster = useRef<HTMLCanvasElement>(null);
   const graphRef = useRef<Graph | null>(null);
@@ -288,6 +295,7 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
     ];
     let ep = 0;
     let world: TrainWorld = task.createWorld(specs[0].spec, HELD_OUT_SEED);
+    worldRef.current = world;
     let smooth = new Smoother(task.smoothMs);
     let rates: Record<string, number> = {};
     const action = new Array(task.actions.length).fill(0);
@@ -301,6 +309,7 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
     const nextEpisode = () => {
       ep = (ep + 1) % specs.length;
       world = task.createWorld(specs[ep].spec, HELD_OUT_SEED);
+      worldRef.current = world;
       smooth = new Smoother(task.smoothMs);
       setEpisodeLabel(`${specs[ep].held ? "Held out" : "Training"} · ${specs[ep].spec.label}`);
     };
@@ -318,6 +327,8 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
           if (!alive) return;
           raw = r.rates;
           const now = world.timeMs;
+          const bus = busRef.current;
+          if (bus) for (const i of r.spikes.i) if (i < bus.n) bus.activity[i] = 1;
           for (let k = 0; k < r.spikes.i.length; k += 2) spikeBuf.push({ t: now + r.spikes.t[k], row: r.spikes.i[k] / n });
           while (spikeBuf.length && spikeBuf[0].t < now - 2000) spikeBuf.shift();
         }
@@ -382,9 +393,9 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
         budget = Math.min(budget - TICK_MS, 60);
         void tick();
       }
+      if (bars.current) theme ??= readTheme(bars.current);
       const c = stage.current;
-      if (c) {
-        theme ??= readTheme(c);
+      if (c && theme) {
         const { ctx, w, h } = fitCanvas(c);
         world.draw(ctx, w, h, theme);
       }
@@ -403,6 +414,14 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
           const graph = await loadGraph();
           if (!alive) return;
           n = graph.neuronIds.length;
+          if (graph.pos && graph.pos.length === n * 3) {
+            const bus = { n, activity: new Float32Array(n) };
+            busRef.current = bus;
+            setBrainGeo((prev) => (prev && prev.cls.length === n ? { ...prev, bus } : { pos: graph.pos!, cls: graph.cls, classes: graph.classes, bus }));
+          } else {
+            busRef.current = null;
+            setBrainGeo(null);
+          }
           client = new WorkerBrain(graph, trainMeta, task.features.map((f) => ({ ...f })), { brain: variant, seed: 1, lesion: [] });
           await client.init();
         }
@@ -431,7 +450,19 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
     <div className="train">
       <div className="train-top">
         <div className="train-stage">
-          <canvas ref={stage} className="train-canvas" aria-label={`${task.title}, live`} />
+          {use3d && sceneKind ? (
+            <div className="train-canvas">
+              <Stage3D
+                kind={sceneKind}
+                getSnap={getSnap}
+                brain={variant === "silenced" ? null : brainGeo}
+                showFly={task.species !== "c-elegans"}
+                onUnavailable={() => setUse3d(false)}
+              />
+            </div>
+          ) : (
+            <canvas ref={stage} className="train-canvas" aria-label={`${task.title}, live`} />
+          )}
           <div className="train-badges">
             <span className="chip">{episodeLabel}</span>
             <span className="chip">{CIRCUIT_LABEL[variant]}</span>

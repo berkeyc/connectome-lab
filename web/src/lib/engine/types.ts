@@ -68,6 +68,8 @@ export type Graph = {
   type: number[]; // per neuron index into types
   cls: number[]; // per neuron index into classes
   side: number[]; // 0 left, 1 right, 2 center
+  /** neuron positions in micrometres, x y z per neuron (FlyWire circuits) */
+  pos?: number[];
   nt: number[]; // per neuron index into nts
   chem: { pre: number[]; post: number[]; w: number[] };
   gap: { pre: number[]; post: number[]; w: number[] };

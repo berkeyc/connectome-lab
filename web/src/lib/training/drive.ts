@@ -5,6 +5,7 @@
 import { drawCar, roundRect, stepCar, type Car } from "../experiments/fly";
 import { clamp, mulberry, wrapAngle, type Metric, type SenseInput, type Theme } from "../experiments/types";
 import type { Target } from "../engine/types";
+import type { TrackSnap } from "../three/snap";
 import type { EpisodeSpec, TrainWorld } from "./types";
 
 /** Which neurons a close wall on each side excites. */
@@ -109,6 +110,17 @@ export class TrackWorld implements TrainWorld {
 
   fitness() {
     return this.progress - CRASH_PENALTY * this.crashes;
+  }
+
+  snapshot(): TrackSnap {
+    const c = this.car;
+    return {
+      kind: "track",
+      track: { w: this.t.w, h: this.t.h, r: this.t.r, lane: this.t.lane, dir: this.t.dir },
+      car: { x: c.x, y: c.y, h: c.h, steer: c.steer, v: c.v },
+      rays: { ...this.sensors },
+      crashes: this.crashes,
+    };
   }
 
   metrics(): Metric[] {

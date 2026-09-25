@@ -122,8 +122,11 @@ export class BrainView {
           if (r > 0.5) discard;
           float glow = smoothstep(0.5, 0.0, r);
           if (mode < 0.5) {
-            vec3 col = mix(vColor * 0.8, vec3(1.0, 0.97, 0.9), vA * 0.8);
-            gl_FragColor = vec4(col, glow * (0.42 + 0.58 * vA));
+            // dim anatomy, activity ramps from the cell class colour to warm light, never to white
+            float a = sqrt(vA);
+            vec3 hot = mix(vColor, vec3(1.0, 0.82, 0.5), a);
+            vec3 col = mix(vColor * 0.35, hot, a);
+            gl_FragColor = vec4(col, glow * (0.28 + 0.62 * a));
           } else {
             // GCaMP green on a dark field: dim baseline, bright when calcium rises
             vec3 col = mix(vec3(0.05, 0.16, 0.08), vec3(0.55, 1.0, 0.45), vC);
@@ -235,7 +238,7 @@ export class BrainView {
     const a = this.act.array as Float32Array;
     const ca = this.calc.array as Float32Array;
     const src = this.o.bus.activity;
-    const decay = Math.exp(-dtMs / 140);
+    const decay = Math.exp(-dtMs / 220);
     const ind = INDICATORS[this.indicator];
     const kr = Math.exp(-dtMs / ind.riseMs), kd = Math.exp(-dtMs / ind.decayMs);
     for (let i = 0; i < a.length; i++) {

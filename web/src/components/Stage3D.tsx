@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ActivityMode, BrainView as BrainViewT, Indicator, SpikeBus } from "@/lib/three/brain";
 import { SKELETON_CREDIT } from "@/lib/three/skeletons";
 import type { CameraMode, SceneKind } from "@/lib/three/scenes";
-import { signalOf, type Snap } from "@/lib/three/snap";
+import { lerpSnap, signalOf, type Snap } from "@/lib/three/snap";
 
 export type BrainGeometry = { pos: number[]; cls: number[]; classes: string[]; ids?: string[]; bus: SpikeBus };
 
@@ -14,7 +14,8 @@ const INDICATOR_NAMES: Indicator[] = ["GCaMP6s", "GCaMP6f", "jGCaMP8f"];
 
 type Props = {
   kind: SceneKind;
-  getSnap: () => Snap | null;
+  /** The world's latest state and its simulation time (ms). */
+  getSnap: () => { snap: Snap; t: number } | null;
   brain?: BrainGeometry | null;
   showFly?: boolean;
   badges?: React.ReactNode;
@@ -35,6 +36,7 @@ function hudFor(s: Snap | null) {
 
 export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, onUnavailable, compact = false }: Props) {
   const main = useRef<HTMLCanvasElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const brainC = useRef<HTMLCanvasElement>(null);
   const flyC = useRef<HTMLCanvasElement>(null);
   const hudL = useRef<HTMLSpanElement>(null);
@@ -89,12 +91,64 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
       const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
       let last = performance.now();
       let lastHud = 0;
+      let prev: { snap: Snap; t: number } | null = null;
+      let cur: { snap: Snap; t: number } | null = null;
+      let curWall = 0;
+      let interval = 20;
+      let frameAvg = 16;
+      const maxDpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      let dpr = maxDpr;
+      let lastDpr = 0;
+      let postOn = true;
+      // stop drawing while the stage is scrolled out of view
+      let visible = true;
+      const io = new IntersectionObserver((e) => (visible = e[0]?.isIntersecting ?? true));
+      if (rootRef.current) io.observe(rootRef.current);
       setLoading(false);
       const frame = (t: number) => {
         if (!alive) return;
         const dt = Math.min(100, t - last);
         last = t;
-        const snap = getRef.current();
+        // interpolate between the last two simulation steps
+        const got = getRef.current();
+        if (got) {
+          if (!cur || got.t < cur.t) {
+            prev = got;
+            cur = got;
+            curWall = t;
+          } else if (got.t !== cur.t) {
+            interval += (Math.min(200, Math.max(8, t - curWall)) - interval) * 0.2;
+            prev = cur;
+            cur = got;
+            curWall = t;
+          }
+        }
+        const alpha = interval > 0 ? Math.min(1, (t - curWall) / interval) : 1;
+        const snap = cur && prev ? lerpSnap(prev.snap, cur.snap, alpha) : null;
+        // adaptive resolution: step the pixel ratio down when frames run long, back up when there is room
+        frameAvg += (dt - frameAvg) * 0.05;
+        if (t - lastDpr > 1500) {
+          if (frameAvg > 30 && dpr <= 0.7 && postOn) {
+            // still too slow at the lowest resolution: drop the post processing
+            postOn = false;
+            scene.setPost(false);
+            lastDpr = t;
+          } else if (frameAvg > 22 && dpr > 0.7) {
+            dpr = Math.max(0.7, dpr - 0.2);
+            scene.setPixelRatio(dpr);
+            sizes.clear();
+            lastDpr = t;
+          } else if (frameAvg < 13 && dpr < maxDpr) {
+            dpr = Math.min(maxDpr, dpr + 0.1);
+            scene.setPixelRatio(dpr);
+            sizes.clear();
+            lastDpr = t;
+          }
+        }
+        if (!visible) {
+          raf = requestAnimationFrame(frame);
+          return;
+        }
         fit(main.current, scene);
         fit(brainC.current, bv);
         fit(flyC.current, fv);
@@ -119,6 +173,7 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
       };
       raf = requestAnimationFrame(frame);
       cleanup = () => {
+        io.disconnect();
         bvRef.current = null;
         scene.dispose();
         bv?.dispose();
@@ -155,7 +210,7 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
   const flywire = Boolean(brain?.ids?.[0] && /^\d{15,20}$/.test(brain.ids[0]));
   const panels = Boolean(brain) || showFly;
   return (
-    <div className={`stage3d ${compact ? "compact" : ""} ${panels ? "with-panels" : ""}`}>
+    <div ref={rootRef} className={`stage3d ${compact ? "compact" : ""} ${panels ? "with-panels" : ""}`}>
       <div className="stage3d-main">
         <canvas ref={main} aria-label="3D view of the experiment" />
         {loading && <div className="stage3d-loading">Loading 3D view…</div>}

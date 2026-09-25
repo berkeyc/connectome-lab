@@ -50,7 +50,11 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
   const worldRef = useRef<World | null>(null);
   const busRef = useRef<BrainGeometry["bus"] | null>(null);
   const viewRef = useRef(view);
-  const getSnap = useCallback(() => worldRef.current?.snapshot?.() ?? null, []);
+  const getSnap = useCallback(() => {
+    const w = worldRef.current;
+    const snap = w?.snapshot?.();
+    return w && snap ? { snap, t: w.timeMs } : null;
+  }, []);
   const runningRef = useRef(running);
   const speedRef = useRef(speed);
   useEffect(() => {

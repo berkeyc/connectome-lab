@@ -59,7 +59,11 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
   const busRef = useRef<BrainGeometry["bus"] | null>(null);
   const [brainGeo, setBrainGeo] = useState<BrainGeometry | null>(null);
   const [use3d, setUse3d] = useState(true);
-  const getSnap = useCallback(() => worldRef.current?.snapshot?.() ?? null, []);
+  const getSnap = useCallback(() => {
+    const w = worldRef.current;
+    const snap = w?.snapshot?.();
+    return w && snap ? { snap, t: w.timeMs } : null;
+  }, []);
   const sceneKind = useMemo(() => task.createWorld(task.train[0], 1).snapshot?.().kind ?? null, [task]);
   const bars = useRef<HTMLCanvasElement>(null);
   const raster = useRef<HTMLCanvasElement>(null);
@@ -141,7 +145,8 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
   const ensurePool = useCallback(async () => {
     if (poolRef.current) return poolRef.current;
     const graph = await loadGraph();
-    const n = Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 2));
+    // leave cores free for the page, the live playback brain and the 3D view, so the view stays smooth
+    const n = Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 3));
     const pool = new TrainPool(n);
     await pool.init(task.id, spec, graph, trainMeta, variant, 1);
     poolRef.current = pool;

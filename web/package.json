@@ -12,10 +12,12 @@
     "check:training": "tsx scripts/train-headless.ts"
   },
   "dependencies": {
+    "@pmndrs/assets": "^1.7.0",
     "@supabase/supabase-js": "^2.117.1",
     "@types/three": "^0.186.0",
     "geist": "^1.7.2",
     "next": "16.3.6",
+    "postprocessing": "^6.39.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "three": "^0.186.1"

@@ -51,3 +51,43 @@ export function signalOf(s: Snap | null): string {
   if (s.kind === "runner") return s.dead ? "crashed" : s.flyY > 0.05 ? "hop" : "running";
   return s.reversing ? "reversing" : "crawling";
 }
+
+const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+const mixAngle = (a: number, b: number, t: number) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
+
+/**
+ * Blend two consecutive world states for drawing. The simulation steps every
+ * 20 ms; the screen refreshes every 7 to 17 ms. Drawing the blend between the
+ * last two steps removes the judder of showing each step as it lands.
+ */
+export function lerpSnap(a: Snap, b: Snap, t: number): Snap {
+  if (a.kind !== b.kind || t >= 1) return b;
+  if (t <= 0) return a;
+  if (b.kind === "track" && a.kind === "track") {
+    // a jump (crash reset) is shown as a cut, not a slide
+    if (Math.hypot(b.car.x - a.car.x, b.car.y - a.car.y) > 1) return b;
+    return {
+      ...b,
+      car: { x: mix(a.car.x, b.car.x, t), y: mix(a.car.y, b.car.y, t), h: mixAngle(a.car.h, b.car.h, t), steer: mix(a.car.steer, b.car.steer, t), v: mix(a.car.v, b.car.v, t) },
+      rays: { dl: mix(a.rays.dl, b.rays.dl, t), dr: mix(a.rays.dr, b.rays.dr, t), pl: mix(a.rays.pl, b.rays.pl, t), pr: mix(a.rays.pr, b.rays.pr, t) },
+    };
+  }
+  if (b.kind === "loom" && a.kind === "loom") {
+    return {
+      ...b,
+      threat: a.threat && b.threat && a.threat.side === b.threat.side ? { side: b.threat.side, dist: mix(a.threat.dist, b.threat.dist, t) } : b.threat,
+      jump: a.jump && b.jump ? { k: mix(a.jump.k, b.jump.k, t), dir: b.jump.dir } : b.jump,
+    };
+  }
+  if (b.kind === "runner" && a.kind === "runner") {
+    const dx = b.scroll - a.scroll;
+    if (dx < 0 || dx > 2) return b; // restart
+    // obstacles all move by the same scroll, so shift the newer list back
+    return { ...b, scroll: mix(a.scroll, b.scroll, t), flyY: mix(a.flyY, b.flyY, t), obstacles: b.obstacles.map((o) => ({ ...o, x: o.x + dx * (1 - t) })) };
+  }
+  if (b.kind === "plate" && a.kind === "plate") {
+    if (Math.hypot(b.head.x - a.head.x, b.head.y - a.head.y) > 0.2) return b;
+    return { ...b, head: { x: mix(a.head.x, b.head.x, t), y: mix(a.head.y, b.head.y, t) }, heading: mixAngle(a.heading, b.heading, t) };
+  }
+  return b;
+}

@@ -3,6 +3,7 @@
 // worker. Loaded on demand (dynamic import) so pages without 3D stay light.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { applyHdri, Post } from "./look";
 import { animateFly, makeCar, makeFly, makeTree, rng, windowTexture, type CarModel, type FlyModel } from "./models";
 import type { LoomSnap, PlateSnap, RunnerSnap, Snap, TrackSnap } from "./snap";
 
@@ -14,6 +15,9 @@ export interface Scene3D {
   render(): void;
   resize(w: number, h: number): void;
   setCamera(mode: CameraMode): void;
+  setPixelRatio(r: number): void;
+  /** Turn post processing off on slow machines (and back on). */
+  setPost(on: boolean): void;
   dispose(): void;
 }
 
@@ -136,6 +140,8 @@ class TrackScene implements Scene3D {
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 200);
   private renderer: THREE.WebGLRenderer;
+  private post!: Post;
+  private postOn = true;
   private car: CarModel;
   private rays: THREE.Line[] = [];
   private built: string | null = null;
@@ -143,12 +149,15 @@ class TrackScene implements Scene3D {
   private mode: CameraMode = "chase";
   private camPos = new THREE.Vector3(0, 8, 14);
   private camLook = new THREE.Vector3();
+  private firstFrame = true;
   private sun: THREE.DirectionalLight;
   private tSec = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = makeRenderer(canvas);
     environment(this.renderer, this.scene);
+    void applyHdri(this.renderer, this.scene, "city", 0.8).catch(() => undefined);
+    this.post = new Post(this.renderer, this.scene, this.camera, { bloom: 0.3 });
     this.sun = daylight(this.scene, 0xcfdde6, 22);
     this.scene.fog = new THREE.Fog(0xcfdde6, 35, 95);
     this.scene.add(this.world);
@@ -300,7 +309,8 @@ class TrackScene implements Scene3D {
       wantPos = new THREE.Vector3(Math.cos(a) * r, r * 0.75, Math.sin(a) * r);
       wantLook = new THREE.Vector3(0, 0, 0);
     }
-    const k = 1 - Math.exp(-dt * 4);
+    const k = this.firstFrame ? 1 : 1 - Math.exp(-dt * 4);
+    this.firstFrame = false;
     this.camPos.lerp(wantPos, k);
     this.camLook.lerp(wantLook, k);
     this.camera.position.copy(this.camPos);
@@ -312,10 +322,19 @@ class TrackScene implements Scene3D {
   }
 
   render() {
-    this.renderer.render(this.scene, this.camera);
+    if (this.postOn) this.post.render(16);
+    else this.renderer.render(this.scene, this.camera);
+  }
+  setPost(on: boolean) {
+    this.postOn = on;
+    this.renderer.toneMapping = on ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
+  }
+  setPixelRatio(r: number) {
+    this.renderer.setPixelRatio(r);
   }
   resize(w: number, h: number) {
     this.renderer.setSize(w, h, false);
+    this.post.setSize(w, h);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.updateProjectionMatrix();
   }
@@ -323,6 +342,7 @@ class TrackScene implements Scene3D {
     this.mode = m;
   }
   dispose() {
+    this.post.dispose();
     disposeScene(this.scene);
     this.renderer.dispose();
   }
@@ -336,6 +356,8 @@ class LoomScene implements Scene3D {
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(42, 16 / 9, 0.05, 100);
   private renderer: THREE.WebGLRenderer;
+  private post!: Post;
+  private postOn = true;
   private fly: FlyModel;
   private ball: THREE.Mesh;
   private t = 0;
@@ -344,6 +366,8 @@ class LoomScene implements Scene3D {
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = makeRenderer(canvas);
     environment(this.renderer, this.scene);
+    void applyHdri(this.renderer, this.scene, "apartment", 0.9).catch(() => undefined);
+    this.post = new Post(this.renderer, this.scene, this.camera, { bloom: 0.25 });
     daylight(this.scene, 0xe9e5dc, 6);
     const wood = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 0.2, 64), new THREE.MeshStandardMaterial({ color: 0xb58a5c, roughness: 0.7 }));
     wood.position.y = -0.1;
@@ -402,10 +426,19 @@ class LoomScene implements Scene3D {
     this.camera.lookAt(0, 0.35, 0);
   }
   render() {
-    this.renderer.render(this.scene, this.camera);
+    if (this.postOn) this.post.render(16);
+    else this.renderer.render(this.scene, this.camera);
+  }
+  setPost(on: boolean) {
+    this.postOn = on;
+    this.renderer.toneMapping = on ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
+  }
+  setPixelRatio(r: number) {
+    this.renderer.setPixelRatio(r);
   }
   resize(w: number, h: number) {
     this.renderer.setSize(w, h, false);
+    this.post.setSize(w, h);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.updateProjectionMatrix();
   }
@@ -413,6 +446,7 @@ class LoomScene implements Scene3D {
     this.mode = m;
   }
   dispose() {
+    this.post.dispose();
     disposeScene(this.scene);
     this.renderer.dispose();
   }
@@ -444,6 +478,8 @@ class RunnerScene implements Scene3D {
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(45, 16 / 9, 0.1, 200);
   private renderer: THREE.WebGLRenderer;
+  private post!: Post;
+  private postOn = true;
   private fly: FlyModel;
   private tex: THREE.Texture;
   private pool: Record<string, THREE.Object3D[]> = { drop: [], stone: [], spider: [] };
@@ -452,6 +488,8 @@ class RunnerScene implements Scene3D {
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = makeRenderer(canvas);
     environment(this.renderer, this.scene, 0.4);
+    void applyHdri(this.renderer, this.scene, "park", 0.6).catch(() => undefined);
+    this.post = new Post(this.renderer, this.scene, this.camera, { bloom: 0.25 });
     daylight(this.scene, 0xcfe0e8, 14);
     this.scene.fog = new THREE.Fog(0xcfe0e8, 18, 60);
     this.tex = groundTexture();
@@ -540,15 +578,25 @@ class RunnerScene implements Scene3D {
     this.camera.lookAt(snap.flyX + 1.5, 0.5, 0);
   }
   render() {
-    this.renderer.render(this.scene, this.camera);
+    if (this.postOn) this.post.render(16);
+    else this.renderer.render(this.scene, this.camera);
+  }
+  setPost(on: boolean) {
+    this.postOn = on;
+    this.renderer.toneMapping = on ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
+  }
+  setPixelRatio(r: number) {
+    this.renderer.setPixelRatio(r);
   }
   resize(w: number, h: number) {
     this.renderer.setSize(w, h, false);
+    this.post.setSize(w, h);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.updateProjectionMatrix();
   }
   setCamera() {}
   dispose() {
+    this.post.dispose();
     disposeScene(this.scene);
     this.renderer.dispose();
   }
@@ -562,6 +610,8 @@ class PlateScene implements Scene3D {
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.01, 50);
   private renderer: THREE.WebGLRenderer;
+  private post!: Post;
+  private postOn = true;
   private worm: THREE.Mesh;
   private trail: THREE.Line;
   private lawn: THREE.Mesh;
@@ -572,6 +622,8 @@ class PlateScene implements Scene3D {
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = makeRenderer(canvas);
     environment(this.renderer, this.scene, 0.8);
+    void applyHdri(this.renderer, this.scene, "studio", 0.9).catch(() => undefined);
+    this.post = new Post(this.renderer, this.scene, this.camera, { bloom: 0.2 });
     daylight(this.scene, 0x1c1f22, 2);
     this.scene.background = new THREE.Color(0x202326);
     const bench = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0x2c3034, roughness: 0.8 }));
@@ -653,10 +705,19 @@ class PlateScene implements Scene3D {
     }
   }
   render() {
-    this.renderer.render(this.scene, this.camera);
+    if (this.postOn) this.post.render(16);
+    else this.renderer.render(this.scene, this.camera);
+  }
+  setPost(on: boolean) {
+    this.postOn = on;
+    this.renderer.toneMapping = on ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
+  }
+  setPixelRatio(r: number) {
+    this.renderer.setPixelRatio(r);
   }
   resize(w: number, h: number) {
     this.renderer.setSize(w, h, false);
+    this.post.setSize(w, h);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.updateProjectionMatrix();
   }
@@ -664,6 +725,7 @@ class PlateScene implements Scene3D {
     this.mode = m;
   }
   dispose() {
+    this.post.dispose();
     disposeScene(this.scene);
     this.renderer.dispose();
   }

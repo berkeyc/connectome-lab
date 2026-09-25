@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from collections import Counter, defaultdict
 
-from common import ROOT, list_species, read_species
+from common import LARGE_DIR, ROOT, list_species, read_species
 
 OUT = ROOT / "web" / "public" / "data"
 MAX_BROWSER_NEURONS = 20000  # bigger brains are listed, but simulated server side later
@@ -128,20 +128,82 @@ def build(species_id: str):
     return meta
 
 
+def build_large(species_id: str, meta: dict):
+    """Summary for brains too big for Python dicts (the whole FlyWire brain), via pandas."""
+    import pandas as pd
+
+    base = LARGE_DIR / species_id
+    nr = pd.read_csv(base / "neurons.csv", dtype=str, keep_default_na=False)
+    cn = pd.read_csv(base / "connections.csv", usecols=["pre_id", "post_id", "region", "syn_count"],
+                     dtype={"pre_id": "int64", "post_id": "int64", "region": "category",
+                            "syn_count": "int32"})
+    nr["neuron_id"] = nr["neuron_id"].astype("int64")
+    nr["cls"] = nr["super_class"].replace("", "other")
+    nr["type"] = nr["cell_type"].replace("", "unknown")
+    cls = nr.set_index("neuron_id")["cls"]
+    syn_out = cn.groupby("pre_id")["syn_count"].sum()
+    syn_in = cn.groupby("post_id")["syn_count"].sum()
+    nr["out_syn"] = nr["neuron_id"].map(syn_out).fillna(0).astype("int64")
+    nr["in_syn"] = nr["neuron_id"].map(syn_in).fillna(0).astype("int64")
+
+    classes = sorted(nr["cls"].unique())
+    order = [c for c in ["sensory", "optic", "visual_projection", "interneuron", "central",
+                         "descending", "ascending", "motor", "other"] if c in classes]
+    order += [c for c in classes if c not in order]
+    flow_df = (cn.assign(a=cn["pre_id"].map(cls), b=cn["post_id"].map(cls))
+                 .groupby(["a", "b"], observed=True)["syn_count"].sum())
+    flow = {k: int(v) for k, v in flow_df.items()}
+
+    grp = nr.groupby("type")
+    types = pd.DataFrame({
+        "cls": grp["cls"].first(), "n": grp.size(),
+        "nt": grp["nt_type"].agg(lambda s: (s.replace("", "?").mode().iat[0])),
+        "in_syn": grp["in_syn"].sum(), "out_syn": grp["out_syn"].sum(),
+    })
+    types["tot"] = types["in_syn"] + types["out_syn"]
+    types = types.sort_values("tot", ascending=False).head(400)
+    nr["tot"] = nr["in_syn"] + nr["out_syn"]
+    hubs = nr.sort_values("tot", ascending=False).head(15)
+    regions = cn.groupby("region", observed=True)["syn_count"].sum().sort_values(ascending=False)
+
+    summary = {
+        "id": species_id, "browserSimulation": False,
+        "counts": {"neurons": len(nr), "chemicalPairs": len(cn), "gapPairs": 0,
+                   "synapses": int(cn["syn_count"].sum()), "cellTypes": int(nr["type"].nunique())},
+        "classCounts": [{"cls": c, "n": int((nr["cls"] == c).sum())} for c in order],
+        "ntCounts": [{"nt": k or "unknown", "n": int(v)}
+                     for k, v in nr["nt_type"].value_counts().items()],
+        "flow": {"classes": order, "matrix": [[flow.get((a, b), 0) for b in order] for a in order]},
+        "hubs": [{"id": str(r.neuron_id), "type": r.cell_type, "cls": r.cls,
+                  "in_syn": int(r.in_syn), "out_syn": int(r.out_syn)} for r in hubs.itertuples()],
+        "types": [{"type": t, "cls": r.cls, "n": int(r.n), "nt": r.nt, "in_syn": int(r.in_syn),
+                   "out_syn": int(r.out_syn)} for t, r in types.iterrows()],
+        "regions": [{"region": r, "syn": int(s)} for r, s in regions.head(20).items() if r != "all"],
+    }
+    out_dir = OUT / "species" / species_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "summary.json").write_text(json.dumps(summary, separators=(",", ":")))
+    print(f"{species_id}: summary only ({len(nr):,} neurons, too large for the browser)")
+    return meta
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     library = []
     for sid in list_species():
         meta_path = ROOT / "species" / sid / "species.json"
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        n = (meta.get("stats") or {}).get("neurons", 0)
         try:
-            meta = build(sid)
+            meta = build_large(sid, meta) if n > MAX_BROWSER_NEURONS else build(sid)
             meta["available"] = True
+            meta["browser"] = n <= MAX_BROWSER_NEURONS
         except FileNotFoundError:
             meta["available"] = False
+            meta["browser"] = False
             print(f"{sid}: no data yet, listed only")
         library.append(meta)
-    library += [{**p, "available": False} for p in PLANNED]
+    library += [{**p, "available": False, "browser": False} for p in PLANNED]
     (OUT / "library.json").write_text(json.dumps(library, indent=1, ensure_ascii=False))
     print(f"library.json: {len(library)} entries")
 

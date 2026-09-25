@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import CommunityGrid from "@/components/CommunityGrid";
 import WorldThumb from "@/components/WorldThumb";
 import { getLibrary } from "@/lib/data";
 import { EXPERIMENTS } from "@/lib/experiments/catalog";
 
 export const metadata: Metadata = {
   title: "Experiments",
-  description: "Watch real connectomes drive bodies and vehicles: a worm backing away from a wall, a fly escaping a shadow, a fly driving and parking a car. Run them in your browser.",
+  description: "Watch real connectomes drive bodies and vehicles: a worm backing away from a wall, a FlyWire circuit escaping a shadow and driving a car. Run them in your browser, next to rewired controls.",
 };
 
 const RUNS = { browser: "Runs in your browser", local: "Local runner", planned: "Planned · local" } as const;
@@ -34,6 +33,7 @@ export default async function ExperimentsPage() {
             <div className="exp-body">
               <div className="exp-meta">
                 <span className={`pill ${e.runsIn === "browser" ? "real" : "local"}`}>{RUNS[e.runsIn]}</span>
+                {e.brainKind === "synthetic" && <span className="pill synthetic">Teaching brain</span>}
                 <span className="pill">{name(e.localSpecies && e.runsIn !== "browser" ? e.localSpecies : e.species)}</span>
               </div>
               <h3>{e.title}</h3>
@@ -42,25 +42,22 @@ export default async function ExperimentsPage() {
           </Link>
         ))}
       </div>
-      <section style={{ marginTop: 56 }} id="community">
-        <div className="section-head">
-          <div>
-            <div className="eyebrow">From the community</div>
-            <h2 style={{ marginTop: 8 }}>The experiments that went viral</h2>
-          </div>
-          <p className="muted small" style={{ maxWidth: "52ch", margin: 0 }}>
-            In September 2026 people wired fly connectomes into games, cars and 3D bodies. Play the browser ones in a new
-            window, or try our own versions of the same ideas right here, with rewired brains to compare.
-          </p>
+      <section className="community-teaser">
+        <div>
+          <div className="eyebrow">From the community</div>
+          <h2>Fly Dino, Swat, the Beat Saber fly and many more</h2>
+          <p className="muted">Credited to their authors, with their code, and notes on what each method can show.</p>
         </div>
-        <CommunityGrid />
+        <Link className="btn primary" href="/community">
+          Open the community gallery
+        </Link>
       </section>
 
       <div className="panel block" style={{ marginTop: 28 }}>
         <h3>Why some experiments run locally</h3>
         <p className="sub" style={{ marginBottom: 0 }}>
-          A 5,000 neuron brain simulates faster than real time in a browser tab. The complete FlyWire fly brain has
-          about 140,000 neurons and millions of connections, and games like Minecraft need their own client. For those,
+          A circuit of a thousand or so neurons simulates faster than real time in a browser tab. The complete FlyWire fly
+          brain has about 139,000 neurons and 15 million connections, and games like Minecraft need their own client. For those,
           the brain runs in a small program on your computer and this site connects to it, so you keep the same live
           view, signals and controls.
         </p>

@@ -28,7 +28,27 @@ export default function About() {
           (Nature, 2024). A spike travels to every partner after 1.8 ms and nudges its membrane by a fixed amount times
           the number of synapses. Whether the nudge excites or inhibits depends only on the sender&apos;s transmitter
           (Dale&apos;s law). Stimulated neurons receive strong random input, which stands in for a sensory stimulus.
-          Worm gap junctions add a weak electrical coupling. Nothing is trained: all behaviour comes from the map.
+          Worm gap junctions add a weak electrical coupling. In the experiments, nothing in the circuit is trained: the
+          wiring, synapse counts and signs are exactly as measured.
+        </p>
+
+        <h2>Real circuits cut from FlyWire</h2>
+        <p>
+          The whole FlyWire brain (v783, about 139,000 neurons and 54 million synapses) runs on the local runner. For the
+          browser we cut circuits out of it: all neurons of chosen input and output types, plus every neuron on strong one or
+          two step paths between them, with every synapse among the selected neurons kept. The escape circuit has 1,067
+          neurons, the visuomotor circuit 1,325. Neurons outside a circuit are missing, and each circuit page says so.
+        </p>
+
+        <h2>Training</h2>
+        <p>
+          In the <Link href="/train">training lab</Link> the circuit stays fixed and only a linear readout learns: a few
+          dozen numbers that turn the firing rates of chosen output neurons into movement. The optimiser is the cross entropy
+          method, the recipe of Fly Dino and similar demos. Every generation is scored on episodes it trains on and on held
+          out episodes it never sees, and the same training can be run on rewired, random and silenced circuits. A trained
+          readout can often exploit any network, so a learning curve on its own proves little; the comparison with the
+          controls is the result. Training uses a 0.25 ms step instead of 0.1 ms, which changes firing rates in these
+          circuits by about 2 percent.
         </p>
 
         <h2>Readouts</h2>
@@ -55,8 +75,51 @@ export default function About() {
           <li>Real neurons differ in size, receptors and dynamics. Here they are all the same simple unit.</li>
           <li>Neuromodulators, learning and body feedback are absent.</li>
           <li>Most worm neurons are graded rather than spiking, so the worm model is a strong simplification. It reproduces the nose touch reversal and the effect of removing AVA, and it does not reproduce the forward response to tail touch.</li>
-          <li>The synthetic fly has realistic circuit layout and invented numbers. Use the FlyWire importer for real fly results.</li>
+          <li>The FlyWire circuits lack the rest of the brain. The local runner removes that limit at the cost of speed.</li>
+          <li>Transmitter identities in FlyWire are predicted from images; glutamate is treated as inhibitory, as in the published model.</li>
+          <li>In this spiking model some worm head circuits (RIA and the head motor neurons) lock into persistent firing after a strong input, which real graded worm neurons do not do.</li>
+          <li>The synthetic teaching fly has a textbook circuit layout and invented numbers. Only the parking demo still uses it, and it is labelled.</li>
         </ul>
+
+        <h2>Who else works on this, and where we fit</h2>
+        <p>
+          We looked for people and institutions building a library like this one. Nobody offers exactly this combination, but
+          several projects cover parts of it, and we build on or point to them:
+        </p>
+        <ul>
+          <li>
+            <a href="https://www.opensourcebrain.org/">Open Source Brain</a> and <a href="https://neuroml.org/">NeuroML</a>:
+            the closest existing library of runnable neuroscience models, aimed at modellers. Exporting our circuits to
+            NeuroML is on the roadmap.
+          </li>
+          <li>
+            <a href="https://openworm.org/">OpenWorm</a>: open worm connectome data and simulation. Our worm data comes from
+            their ConnectomeToolbox.
+          </li>
+          <li>
+            <a href="https://flywire.ai/">FlyWire</a> and <a href="https://codex.flywire.ai/">Codex</a>, and Janelia&apos;s{" "}
+            <a href="https://male-cns.janelia.org/">MaleCNS</a> and neuPrint: the fly datasets and their explorers.
+          </li>
+          <li>
+            <a href="https://github.com/philshiu/Drosophila_brain_model">Shiu et al.</a>: the whole brain fly model we follow.{" "}
+            <a href="https://github.com/NeLy-EPFL/flygym">NeuroMechFly and FlyGym</a> and{" "}
+            <a href="https://github.com/TuragaLab/flybody">flybody</a>: simulated fly bodies.
+          </li>
+          <li>
+            <a href="https://eon.systems/">Eon Systems</a>: a company emulating the whole fly brain in a simulated body.
+          </li>
+          <li>
+            The 2026 wave of demos (Fly Dino, Swat, the Minecraft and Beat Saber flies and dozens more), collected in{" "}
+            <a href="https://github.com/cobanov/awesome-fly">awesome-fly</a> and credited on our{" "}
+            <Link href="/community">community page</Link>.
+          </li>
+        </ul>
+        <p>
+          Our niche is the one constraint we fix for every experiment: <strong>a result is only shown next to its controls</strong>.
+          Everything else can change (species, task, readout), but no behaviour appears on this site without the rewired,
+          random or silenced version beside it. That makes the library useful for teaching and for quick hypothesis checks,
+          and keeps it honest about what the popular demos can and cannot show.
+        </p>
 
         <h2>Run it yourself</h2>
         <pre>{`git clone https://github.com/berkeyc/connectome-lab.git
@@ -65,8 +128,9 @@ pip install -r requirements.txt
 python pipeline/build_web_bundle.py
 cd web && npm install && npm run dev`}</pre>
         <p>
-          The repository also contains the SQL layer, the importers and a guide to adding a new species. Start from the{" "}
-          <Link href="/lab/c-elegans">worm lab</Link> if you just want to experiment.
+          The repository also contains the SQL layer, the importers, the local runner and a guide to adding a new species.
+          Start from the <Link href="/train">training lab</Link> or the <Link href="/lab/c-elegans">worm lab</Link> if you just
+          want to experiment.
         </p>
       </div>
     </div>

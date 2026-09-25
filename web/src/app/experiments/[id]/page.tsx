@@ -38,7 +38,8 @@ export default async function ExperimentPage(props: PageProps<"/experiments/[id]
 
   return (
     <div className="wrap">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {/* JSON-LD: "<" is escaped so no string can close the script tag */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <div className="page-head" style={{ paddingBottom: 18 }}>
         <div>
           <div className="eyebrow">
@@ -62,6 +63,27 @@ export default async function ExperimentPage(props: PageProps<"/experiments/[id]
           <h3 style={{ marginTop: 12 }}>This experiment is on the roadmap</h3>
           <p>It will run on the local runner once its game bridge is ready. The description below explains the plan.</p>
         </div>
+      )}
+
+      {e.brainKind === "synthetic" && (
+        <p className="notice" style={{ marginTop: 16 }}>
+          This experiment runs on the synthetic teaching brain: a textbook circuit layout with invented numbers. It illustrates an
+          idea; it is not a result about real flies.
+        </p>
+      )}
+
+      {e.findings && (
+        <section className="findings">
+          <h3>What we measured</h3>
+          <dl>
+            {e.findings.map((f) => (
+              <div key={f.label}>
+                <dt>{f.label}</dt>
+                <dd>{f.value.startsWith("/") ? <Link href={f.value}>{f.value}</Link> : f.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       )}
 
       <div className="two-col">

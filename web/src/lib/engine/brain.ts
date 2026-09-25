@@ -51,6 +51,19 @@ export class Brain {
     return this.net.silenced;
   }
 
+  /** Back to rest with the same wiring (for repeated training episodes). */
+  reset(seed = 1) {
+    this.v.fill(this.p.v_rest);
+    this.g.fill(0);
+    this.refr.fill(0);
+    for (const r of this.ring) r.fill(0);
+    this.gap.fill(0);
+    this.inputHz.fill(0);
+    this.counts = new Int32Array(this.n);
+    this.stepIndex = 0;
+    this.rnd = mulberry32(seed * 31 + 7);
+  }
+
   /** Set the Poisson input rate for every neuron matching the targets. */
   setInput(targets: Target[], hz: number) {
     for (const i of selectNeurons(this.graph, targets)) this.inputHz[i] = hz;

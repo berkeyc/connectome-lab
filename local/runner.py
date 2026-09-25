@@ -15,14 +15,18 @@ Then open an experiment on the website, choose "Local runner" and press Restart.
 The model is the same leaky integrate and fire network as the website
 (Shiu et al. 2024): chemical synapses signed by the sender's transmitter,
 optional gap junction coupling, Poisson input to stimulated neurons.
-The server only listens on 127.0.0.1, so nothing outside your computer can reach it.
+The server only listens on 127.0.0.1, so nothing outside your computer can reach it,
+and it only accepts pages from the Connectome Lab site and from localhost
+(add your own deployment with --allow-origin https://your.site).
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import ipaddress
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -37,6 +41,13 @@ except ImportError:  # pragma: no cover
 
 ROOT = Path(__file__).resolve().parent.parent
 SIDE_CODE = {"left": 0, "right": 1}
+SPECIES_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+DEFAULT_ORIGINS = [
+    "https://connectome-lab-gamma.vercel.app",
+    "http://localhost:3000", "http://127.0.0.1:3000",
+]
+MAX_MESSAGE = 1 << 20  # 1 MB per message is plenty for inputs and channel lists
+MAX_TARGETS = 256
 
 
 # --------------------------------------------------------------------------
@@ -45,6 +56,8 @@ SIDE_CODE = {"left": 0, "right": 1}
 
 class Species:
     def __init__(self, species_id: str):
+        if not SPECIES_ID.match(species_id):
+            raise ValueError("Invalid species id")
         meta_path = ROOT / "species" / species_id / "species.json"
         if not meta_path.exists():
             raise FileNotFoundError(f"Unknown species '{species_id}' (no {meta_path.relative_to(ROOT)})")
@@ -54,10 +67,16 @@ class Species:
             base = ROOT / "data" / "species" / species_id
         if not (base / "neurons.csv").exists():
             raise FileNotFoundError(
-                f"No data for '{species_id}'. Import it first, for FlyWire: python pipeline/import_flywire.py")
+                f"No data for '{species_id}'. Import it first, for FlyWire: python pipeline/import_flywire_v783.py")
         t0 = time.time()
         neurons = pd.read_csv(base / "neurons.csv", dtype={"neuron_id": str}, keep_default_na=False)
-        conns = pd.read_csv(base / "connections.csv", dtype={"pre_id": str, "post_id": str}, keep_default_na=False)
+        # numeric ids (FlyWire) are read as integers: far less memory for 15 million rows
+        numeric = bool(neurons["neuron_id"].str.fullmatch(r"\d+").all())
+        id_type = "int64" if numeric else str
+        if numeric:
+            neurons["neuron_id"] = neurons["neuron_id"].astype("int64")
+        conns = pd.read_csv(base / "connections.csv", dtype={"pre_id": id_type, "post_id": id_type, "syn_type": "category"},
+                            usecols=["pre_id", "post_id", "syn_type", "syn_count"], keep_default_na=False)
         self.n = len(neurons)
         index = pd.Series(np.arange(self.n), index=neurons["neuron_id"])
         self.cell_type = neurons["cell_type"].astype(str).to_numpy()
@@ -221,9 +240,13 @@ class Server:
         channels: dict[str, np.ndarray] = {}
         sp = None
         async for raw in ws:
-            msg = json.loads(raw)
             try:
+                msg = json.loads(raw)
+                if not isinstance(msg, dict):
+                    raise ValueError("Bad message")
                 if msg["type"] == "init":
+                    if len(msg.get("channels", [])) > 64 or len(msg.get("lesion", [])) > MAX_TARGETS:
+                        raise ValueError("Too many channels or lesions")
                     t0 = time.time()
                     sp = self.species(msg["species"])
                     missing = set()
@@ -242,12 +265,15 @@ class Server:
                     }))
                 elif msg["type"] == "tick" and brain is not None:
                     brain.input_hz[:] = 0
-                    for inp in msg.get("inputs", []):
-                        idx, _ = sp.select(inp["targets"], self.alias)
-                        brain.input_hz[idx] = inp["hz"]
+                    inputs = msg.get("inputs", [])
+                    if len(inputs) > MAX_TARGETS:
+                        raise ValueError("Too many inputs")
+                    for inp in inputs:
+                        idx, _ = sp.select(inp["targets"][:MAX_TARGETS], self.alias)
+                        brain.input_hz[idx] = min(max(float(inp["hz"]), 0.0), 1000.0)
+                    ms = min(max(float(msg.get("ms", 20)), 1.0), 200.0)
                     t0 = time.time()
-                    counts, ev_t, ev_i = brain.step(float(msg.get("ms", 20)))
-                    ms = float(msg.get("ms", 20))
+                    counts, ev_t, ev_i = brain.step(ms)
                     rates = {cid: (float(counts[idx].mean()) * 1000 / ms if len(idx) else 0.0) for cid, idx in channels.items()}
                     await ws.send(json.dumps({
                         "type": "tick", "id": msg["id"], "rates": rates,
@@ -266,9 +292,20 @@ async def main():
     ap.add_argument("--alias", action="append", default=[], metavar="ASKED=ACTUAL",
                     help="map a cell type name the site asks for to the name in your dataset")
     ap.add_argument("--use", help="serve this species id for every request")
+    ap.add_argument("--allow-origin", action="append", default=[], metavar="URL",
+                    help="also accept pages from this origin, e.g. https://my-copy.example.org")
     args = ap.parse_args()
+    try:
+        loopback = ipaddress.ip_address(args.host).is_loopback
+    except ValueError:
+        loopback = args.host == "localhost"
+    if not loopback:
+        print(f"Warning: listening on {args.host} exposes the runner beyond this computer.")
     server = Server(args)
-    async with websockets.serve(server.handle, args.host, args.port, max_size=2**26):
+    # Browsers always send an Origin header; only our site and localhost may connect.
+    # None admits non-browser clients on this machine (scripts, tests).
+    origins = [*DEFAULT_ORIGINS, *args.allow_origin, None]
+    async with websockets.serve(server.handle, args.host, args.port, max_size=MAX_MESSAGE, origins=origins):
         print(f"Connectome Lab local runner listening on ws://{args.host}:{args.port}")
         print("Open an experiment on the website, choose 'Local runner' and press Restart.")
         await asyncio.Future()

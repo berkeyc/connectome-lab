@@ -47,6 +47,13 @@ export class WorkerBrain implements BrainClient {
         this.pending.clear();
       }
     };
+    // a worker that fails to load or crashes must not leave the page waiting forever
+    this.w.onerror = (e) => {
+      const err = new Error(e.message || "The simulation worker stopped");
+      this.readyReject?.(err);
+      for (const p of this.pending.values()) p.reject(err);
+      this.pending.clear();
+    };
   }
 
   async init(): Promise<ReadyInfo> {

@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "check:presets": "tsx scripts/check-presets.ts",
-    "check:experiments": "tsx scripts/check-experiments.ts"
+    "check:experiments": "tsx scripts/check-experiments.ts",
+    "check:training": "tsx scripts/train-headless.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.1",
     "geist": "^1.7.2",
     "next": "16.3.6",
     "react": "19.2.8",

@@ -153,32 +153,321 @@
    "connections": 5905,
    "synapses": 32488
   },
-  "available": true
+  "available": true,
+  "browser": true
  },
  {
-  "common_name": "Fruit fly (FlyWire, real)",
+  "common_name": "Fruit fly escape circuit (FlyWire)",
   "latin_name": "Drosophila melanogaster",
-  "status": "import",
-  "summary": "The complete adult female fly brain: about 140,000 neurons and 50 million synapses, reconstructed from electron microscopy by the FlyWire consortium.",
-  "dataset": "FlyWire FAFB connectome via Codex",
-  "source_url": "https://codex.flywire.ai",
-  "license": "FlyWire data terms of use apply. Not redistributed in this repository.",
+  "status": "real",
+  "parent": "fruit-fly-flywire",
+  "summary": "The real looming escape pathway of the adult fly brain: 314 looming detectors (LC4, LPLC2), the Giant Fiber and the neurons between them, cut out of FlyWire with every measured synapse.",
+  "dataset": "Subcircuit of FlyWire v783: inputs LC4, LPLC2; outputs DNp01, DNp02, DNp04, DNp06, DNp11; paths with at least 20 synapses per step",
+  "source_url": "https://flywire.ai",
+  "license": "FlyWire connectome v783, CC BY-NC 4.0 (flywire.ai/guidelines). Connectivity table via github.com/philshiu/Drosophila_brain_model, annotations via github.com/flyconnectome/flywire_annotations.",
   "citations": [
    "Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.",
    "Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of Drosophila. Nature 634, 139-152.",
+   "Shiu, P. K. et al. (2024). A Drosophila computational brain model reveals sensorimotor processing. Nature 634, 210-219.",
    "Eckstein, N. et al. (2024). Neurotransmitter classification from electron microscopy images at synaptic sites in Drosophila melanogaster. Cell 187, 2574-2594."
   ],
   "caveats": [
-   "Transmitter types are predictions from images, with a confidence score.",
-   "Too large for in-browser simulation; use the SQL layer or a server side run."
+   "Wiring, cell types and transmitters are measured or predicted from electron microscopy. Dynamics use the published leaky integrate and fire model of Shiu et al. (2024): identical neurons, weights proportional to synapse counts, sign from the predicted transmitter.",
+   "Transmitter identities are predictions. Glutamate is treated as inhibitory, as in the published model.",
+   "A subcircuit: neurons outside it are absent, so inputs they would provide are missing.",
+   "Selection: all LC4, LPLC2 and DNp01, DNp02, DNp04, DNp06, DNp11 neurons, plus neurons on paths of one or two steps between them with at least 20 synapses per step. Every synapse among the selected neurons is kept."
   ],
   "sign": {
    "ACH": 1,
+   "DA": 1,
+   "SER": 1,
+   "OCT": 1,
    "GABA": -1,
    "GLUT": -1,
-   "DA": 0,
-   "SER": 0,
-   "OCT": 0,
+   "": 0
+  },
+  "sim": {
+   "duration_ms": 1000,
+   "dt_ms": 0.1,
+   "v_rest": -52,
+   "v_reset": -52,
+   "v_th": -45,
+   "tau_m_ms": 20,
+   "t_ref_ms": 2.2,
+   "tau_syn_ms": 5,
+   "delay_ms": 1.8,
+   "w_syn_mv": 0.275,
+   "g_gap": 0,
+   "input_rate_hz": 150,
+   "input_w_mv": 68.75
+  },
+  "readouts": [
+   {
+    "id": "escape",
+    "label": "Giant Fiber",
+    "description": "Firing of DNp01, the Giant Fiber that triggers take off.",
+    "positive": {
+     "label": "Giant Fiber",
+     "cell_types": [
+      "DNp01"
+     ]
+    }
+   },
+   {
+    "id": "escape_side",
+    "label": "Giant Fiber, right minus left",
+    "description": "Asymmetry between the right and left Giant Fiber.",
+    "positive": {
+     "label": "right",
+     "cell_types": [
+      "DNp01"
+     ],
+     "side": "right"
+    },
+    "negative": {
+     "label": "left",
+     "cell_types": [
+      "DNp01"
+     ],
+     "side": "left"
+    }
+   }
+  ],
+  "presets": [
+   {
+    "id": "looming-right",
+    "label": "Looming object from the right",
+    "description": "Stimulate the right LC4 and LPLC2 looming detectors.",
+    "stimulate": [
+     {
+      "cell_type": "LC4",
+      "side": "right"
+     },
+     {
+      "cell_type": "LPLC2",
+      "side": "right"
+     }
+    ],
+    "lesion": [],
+    "expected": "In real flies: Giant Fiber spikes and a fast take off."
+   },
+   {
+    "id": "looming-no-lplc2",
+    "label": "Looming without LPLC2",
+    "description": "Same stimulus with LPLC2 silenced.",
+    "stimulate": [
+     {
+      "cell_type": "LC4",
+      "side": "right"
+     },
+     {
+      "cell_type": "LPLC2",
+      "side": "right"
+     }
+    ],
+    "lesion": [
+     {
+      "cell_type": "LPLC2"
+     }
+    ],
+    "expected": "In real flies: Giant Fiber responses to looming shrink when LPLC2 is silenced (Ache et al. 2019)."
+   },
+   {
+    "id": "lc4-only",
+    "label": "Only LC4",
+    "description": "Stimulate LC4 on both sides.",
+    "stimulate": [
+     {
+      "cell_type": "LC4"
+     }
+    ],
+    "lesion": [],
+    "expected": "LC4 alone can drive the Giant Fiber (von Reyn et al. 2017)."
+   }
+  ],
+  "circuit": {
+   "inputs": [
+    "LC4",
+    "LPLC2"
+   ],
+   "outputs": [
+    "DNp01",
+    "DNp02",
+    "DNp04",
+    "DNp06",
+    "DNp11"
+   ],
+   "min_syn": 20
+  },
+  "id": "fly-escape-circuit",
+  "stats": {
+   "neurons": 1067,
+   "connections": 84219,
+   "synapses": 539077
+  },
+  "available": true,
+  "browser": true
+ },
+ {
+  "common_name": "Fruit fly visuomotor circuit (FlyWire)",
+  "latin_name": "Drosophila melanogaster",
+  "status": "real",
+  "parent": "fruit-fly-flywire",
+  "summary": "Visual projection neurons that detect looming and moving objects, the descending neurons that steer, stop, reverse and escape, and the strongest paths between them. Used for training experiments.",
+  "dataset": "Subcircuit of FlyWire v783: inputs LC4, LPLC2, LPLC1, LC16; outputs DNa01, DNa02, DNa03, DNb05, DNa11, DNp01, MDN, DNp09, DNg13, DNp03; paths with at least 40 synapses per step",
+  "source_url": "https://flywire.ai",
+  "license": "FlyWire connectome v783, CC BY-NC 4.0 (flywire.ai/guidelines). Connectivity table via github.com/philshiu/Drosophila_brain_model, annotations via github.com/flyconnectome/flywire_annotations.",
+  "citations": [
+   "Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.",
+   "Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of Drosophila. Nature 634, 139-152.",
+   "Shiu, P. K. et al. (2024). A Drosophila computational brain model reveals sensorimotor processing. Nature 634, 210-219.",
+   "Eckstein, N. et al. (2024). Neurotransmitter classification from electron microscopy images at synaptic sites in Drosophila melanogaster. Cell 187, 2574-2594."
+  ],
+  "caveats": [
+   "Wiring, cell types and transmitters are measured or predicted from electron microscopy. Dynamics use the published leaky integrate and fire model of Shiu et al. (2024): identical neurons, weights proportional to synapse counts, sign from the predicted transmitter.",
+   "Transmitter identities are predictions. Glutamate is treated as inhibitory, as in the published model.",
+   "A subcircuit: neurons outside it are absent, so inputs they would provide are missing.",
+   "Selection: all LC4, LPLC2, LPLC1, LC16 and DNa01, DNa02, DNa03, DNb05, DNa11, DNp01, MDN, DNp09, DNg13, DNp03 neurons, plus neurons on paths of one or two steps between them with at least 40 synapses per step. Every synapse among the selected neurons is kept."
+  ],
+  "sign": {
+   "ACH": 1,
+   "DA": 1,
+   "SER": 1,
+   "OCT": 1,
+   "GABA": -1,
+   "GLUT": -1,
+   "": 0
+  },
+  "sim": {
+   "duration_ms": 1000,
+   "dt_ms": 0.1,
+   "v_rest": -52,
+   "v_reset": -52,
+   "v_th": -45,
+   "tau_m_ms": 20,
+   "t_ref_ms": 2.2,
+   "tau_syn_ms": 5,
+   "delay_ms": 1.8,
+   "w_syn_mv": 0.275,
+   "g_gap": 0,
+   "input_rate_hz": 150,
+   "input_w_mv": 68.75
+  },
+  "readouts": [
+   {
+    "id": "steer",
+    "label": "DNa02, right minus left",
+    "description": "Steering descending neurons.",
+    "positive": {
+     "label": "right",
+     "cell_types": [
+      "DNa02"
+     ],
+     "side": "right"
+    },
+    "negative": {
+     "label": "left",
+     "cell_types": [
+      "DNa02"
+     ],
+     "side": "left"
+    }
+   },
+   {
+    "id": "backward",
+    "label": "Moonwalker (MDN)",
+    "description": "Backward walking command.",
+    "positive": {
+     "label": "MDN",
+     "cell_types": [
+      "MDN"
+     ]
+    }
+   }
+  ],
+  "presets": [
+   {
+    "id": "lc16",
+    "label": "LC16 on both sides",
+    "description": "LC16 activation makes real flies walk backwards (Wu et al. 2016).",
+    "stimulate": [
+     {
+      "cell_type": "LC16"
+     }
+    ],
+    "lesion": [],
+    "expected": "In real flies: backward walking."
+   },
+   {
+    "id": "lplc1-right",
+    "label": "LPLC1 right",
+    "description": "Stimulate right LPLC1.",
+    "stimulate": [
+     {
+      "cell_type": "LPLC1",
+      "side": "right"
+     }
+    ],
+    "lesion": [],
+    "expected": "See which descending neurons respond."
+   }
+  ],
+  "circuit": {
+   "inputs": [
+    "LC4",
+    "LPLC2",
+    "LPLC1",
+    "LC16"
+   ],
+   "outputs": [
+    "DNa01",
+    "DNa02",
+    "DNa03",
+    "DNb05",
+    "DNa11",
+    "DNp01",
+    "MDN",
+    "DNp09",
+    "DNg13",
+    "DNp03"
+   ],
+   "min_syn": 40
+  },
+  "id": "fly-visuomotor-circuit",
+  "stats": {
+   "neurons": 1325,
+   "connections": 91241,
+   "synapses": 590700
+  },
+  "available": true,
+  "browser": true
+ },
+ {
+  "common_name": "Fruit fly, whole brain (FlyWire)",
+  "latin_name": "Drosophila melanogaster",
+  "status": "import",
+  "summary": "The complete adult female fly brain: about 139,000 neurons and 54 million synapses, reconstructed from electron microscopy by the FlyWire consortium. Runs on the local runner.",
+  "dataset": "FlyWire connectome v783 with Schlegel et al. 2024 annotations",
+  "source_url": "https://flywire.ai",
+  "license": "FlyWire connectome v783, CC BY-NC 4.0 (flywire.ai/guidelines). Connectivity table via github.com/philshiu/Drosophila_brain_model, annotations via github.com/flyconnectome/flywire_annotations.",
+  "citations": [
+   "Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.",
+   "Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of Drosophila. Nature 634, 139-152.",
+   "Shiu, P. K. et al. (2024). A Drosophila computational brain model reveals sensorimotor processing. Nature 634, 210-219.",
+   "Eckstein, N. et al. (2024). Neurotransmitter classification from electron microscopy images at synaptic sites in Drosophila melanogaster. Cell 187, 2574-2594."
+  ],
+  "caveats": [
+   "Wiring, cell types and transmitters are measured or predicted from electron microscopy. Dynamics use the published leaky integrate and fire model of Shiu et al. (2024): identical neurons, weights proportional to synapse counts, sign from the predicted transmitter.",
+   "Transmitter identities are predictions. Glutamate is treated as inhibitory, as in the published model.",
+   "Too large for real time simulation in a browser; use the local runner."
+  ],
+  "sign": {
+   "ACH": 1,
+   "DA": 1,
+   "SER": 1,
+   "OCT": 1,
+   "GABA": -1,
+   "GLUT": -1,
    "": 0
   },
   "sim": {
@@ -227,8 +516,13 @@
    }
   ],
   "id": "fruit-fly-flywire",
-  "stats": null,
-  "available": false
+  "stats": {
+   "neurons": 138639,
+   "connections": 15091983,
+   "synapses": 54492922
+  },
+  "available": true,
+  "browser": false
  },
  {
   "common_name": "Fruit fly (synthetic demo)",
@@ -397,7 +691,8 @@
    "connections": 50128,
    "synapses": 627323
   },
-  "available": true
+  "available": true,
+  "browser": true
  },
  {
   "id": "fruit-fly-larva",
@@ -406,7 +701,8 @@
   "status": "planned",
   "summary": "The complete larval brain: 3,016 neurons with a fully mapped learning centre.",
   "dataset": "Winding, M. et al. (2023). The connectome of an insect brain. Science 379, eadd9330.",
-  "available": false
+  "available": false,
+  "browser": false
  },
  {
   "id": "fruit-fly-male-cns",
@@ -415,7 +711,8 @@
   "status": "planned",
   "summary": "Brain plus nerve cord of the male fly, about 166,000 neurons, released in 2026.",
   "dataset": "MaleCNS v1.0, Janelia FlyEM, Cambridge Connectomics and Google Research (2026).",
-  "available": false
+  "available": false,
+  "browser": false
  },
  {
   "id": "ciona-larva",
@@ -424,7 +721,8 @@
   "status": "planned",
   "summary": "A tadpole shaped relative of vertebrates with 177 central neurons.",
   "dataset": "Ryan, K. et al. (2016). The CNS connectome of a tadpole larva of Ciona intestinalis. eLife 5, e16962.",
-  "available": false
+  "available": false,
+  "browser": false
  },
  {
   "id": "mouse-v1-microns",
@@ -433,7 +731,8 @@
   "status": "planned",
   "summary": "A cubic millimetre of mouse visual cortex with functional recordings of the same neurons.",
   "dataset": "MICrONS Consortium (2025). Functional connectomics spanning multiple areas of mouse visual cortex. Nature.",
-  "available": false
+  "available": false,
+  "browser": false
  },
  {
   "id": "human-h01",
@@ -442,6 +741,7 @@
   "status": "planned",
   "summary": "A cubic millimetre of human temporal cortex: about 57,000 cells and 150 million synapses.",
   "dataset": "Shapson-Coe, A. et al. (2024). A petavoxel fragment of human cerebral cortex reconstructed at nanoscale resolution. Science 384, eadk4858.",
-  "available": false
+  "available": false,
+  "browser": false
  }
 ]

@@ -1,0 +1,150 @@
+{
+  "common_name": "Fruit fly escape circuit (FlyWire)",
+  "latin_name": "Drosophila melanogaster",
+  "status": "real",
+  "parent": "fruit-fly-flywire",
+  "summary": "The real looming escape pathway of the adult fly brain: 314 looming detectors (LC4, LPLC2), the Giant Fiber and the neurons between them, cut out of FlyWire with every measured synapse.",
+  "dataset": "Subcircuit of FlyWire v783: inputs LC4, LPLC2; outputs DNp01, DNp02, DNp04, DNp06, DNp11; paths with at least 20 synapses per step",
+  "source_url": "https://flywire.ai",
+  "license": "FlyWire connectome v783, CC BY-NC 4.0 (flywire.ai/guidelines). Connectivity table via github.com/philshiu/Drosophila_brain_model, annotations via github.com/flyconnectome/flywire_annotations.",
+  "citations": [
+    "Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.",
+    "Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of Drosophila. Nature 634, 139-152.",
+    "Shiu, P. K. et al. (2024). A Drosophila computational brain model reveals sensorimotor processing. Nature 634, 210-219.",
+    "Eckstein, N. et al. (2024). Neurotransmitter classification from electron microscopy images at synaptic sites in Drosophila melanogaster. Cell 187, 2574-2594."
+  ],
+  "caveats": [
+    "Wiring, cell types and transmitters are measured or predicted from electron microscopy. Dynamics use the published leaky integrate and fire model of Shiu et al. (2024): identical neurons, weights proportional to synapse counts, sign from the predicted transmitter.",
+    "Transmitter identities are predictions. Glutamate is treated as inhibitory, as in the published model.",
+    "A subcircuit: neurons outside it are absent, so inputs they would provide are missing.",
+    "Selection: all LC4, LPLC2 and DNp01, DNp02, DNp04, DNp06, DNp11 neurons, plus neurons on paths of one or two steps between them with at least 20 synapses per step. Every synapse among the selected neurons is kept."
+  ],
+  "sign": {
+    "ACH": 1,
+    "DA": 1,
+    "SER": 1,
+    "OCT": 1,
+    "GABA": -1,
+    "GLUT": -1,
+    "": 0
+  },
+  "sim": {
+    "duration_ms": 1000,
+    "dt_ms": 0.1,
+    "v_rest": -52,
+    "v_reset": -52,
+    "v_th": -45,
+    "tau_m_ms": 20,
+    "t_ref_ms": 2.2,
+    "tau_syn_ms": 5,
+    "delay_ms": 1.8,
+    "w_syn_mv": 0.275,
+    "g_gap": 0,
+    "input_rate_hz": 150,
+    "input_w_mv": 68.75
+  },
+  "readouts": [
+    {
+      "id": "escape",
+      "label": "Giant Fiber",
+      "description": "Firing of DNp01, the Giant Fiber that triggers take off.",
+      "positive": {
+        "label": "Giant Fiber",
+        "cell_types": [
+          "DNp01"
+        ]
+      }
+    },
+    {
+      "id": "escape_side",
+      "label": "Giant Fiber, right minus left",
+      "description": "Asymmetry between the right and left Giant Fiber.",
+      "positive": {
+        "label": "right",
+        "cell_types": [
+          "DNp01"
+        ],
+        "side": "right"
+      },
+      "negative": {
+        "label": "left",
+        "cell_types": [
+          "DNp01"
+        ],
+        "side": "left"
+      }
+    }
+  ],
+  "presets": [
+    {
+      "id": "looming-right",
+      "label": "Looming object from the right",
+      "description": "Stimulate the right LC4 and LPLC2 looming detectors.",
+      "stimulate": [
+        {
+          "cell_type": "LC4",
+          "side": "right"
+        },
+        {
+          "cell_type": "LPLC2",
+          "side": "right"
+        }
+      ],
+      "lesion": [],
+      "expected": "In real flies: Giant Fiber spikes and a fast take off."
+    },
+    {
+      "id": "looming-no-lplc2",
+      "label": "Looming without LPLC2",
+      "description": "Same stimulus with LPLC2 silenced.",
+      "stimulate": [
+        {
+          "cell_type": "LC4",
+          "side": "right"
+        },
+        {
+          "cell_type": "LPLC2",
+          "side": "right"
+        }
+      ],
+      "lesion": [
+        {
+          "cell_type": "LPLC2"
+        }
+      ],
+      "expected": "In real flies: Giant Fiber responses to looming shrink when LPLC2 is silenced (Ache et al. 2019)."
+    },
+    {
+      "id": "lc4-only",
+      "label": "Only LC4",
+      "description": "Stimulate LC4 on both sides.",
+      "stimulate": [
+        {
+          "cell_type": "LC4"
+        }
+      ],
+      "lesion": [],
+      "expected": "LC4 alone can drive the Giant Fiber (von Reyn et al. 2017)."
+    }
+  ],
+  "circuit": {
+    "inputs": [
+      "LC4",
+      "LPLC2"
+    ],
+    "outputs": [
+      "DNp01",
+      "DNp02",
+      "DNp04",
+      "DNp06",
+      "DNp11"
+    ],
+    "min_syn": 20
+  },
+  "id": "fly-escape-circuit",
+  "stats": {
+    "neurons": 1067,
+    "connections": 84219,
+    "synapses": 539077
+  }
+}

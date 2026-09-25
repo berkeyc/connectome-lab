@@ -6,6 +6,7 @@ import { getExperiment } from "@/lib/experiments/catalog";
 import { LocalBrain, LOCAL_URL, WorkerBrain, type BrainClient, type ReadyInfo } from "@/lib/experiments/clients";
 import { Smoother } from "@/lib/experiments/loop";
 import type { Metric, Theme, World } from "@/lib/experiments/types";
+import { fitCanvas, readTheme } from "@/lib/canvas";
 import { CLASS_ORDER } from "@/lib/raster";
 
 const TICK_MS = 20;
@@ -19,24 +20,6 @@ const BRAINS: { id: BrainVariant; label: string }[] = [
   { id: "signs", label: "Shuffled transmitters" },
 ];
 
-function readTheme(el: Element): Theme {
-  const cs = getComputedStyle(el);
-  const v = (n: string) => cs.getPropertyValue(n).trim() || "#888";
-  return { bg: v("--surface-2"), surface: v("--surface"), line: v("--line-strong"), text: v("--text"), text2: v("--text-3"), accent: v("--accent"), warn: v("--warn"), inhib: v("--inhib") };
-}
-
-function fitCanvas(c: HTMLCanvasElement) {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = c.clientWidth, h = c.clientHeight;
-  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
-    c.width = Math.round(w * dpr);
-    c.height = Math.round(h * dpr);
-  }
-  const ctx = c.getContext("2d")!;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return { ctx, w, h };
-}
-
 type Props = {
   experimentId: string;
   meta?: SpeciesMeta;
@@ -46,6 +29,7 @@ type Props = {
 
 export default function ExperimentPlayer({ experimentId, meta, compact = false, autoplay = true }: Props) {
   const def = useMemo(() => getExperiment(experimentId)!, [experimentId]);
+  const shown = useMemo(() => def.channels.filter((c) => !c.hidden), [def]);
   const stage = useRef<HTMLCanvasElement>(null);
   const traces = useRef<HTMLCanvasElement>(null);
   const raster = useRef<HTMLCanvasElement>(null);
@@ -75,7 +59,7 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
     let raf = 0;
     const world: World = def.createWorld!(seed);
     const smoother = new Smoother(def.smoothMs ?? 100);
-    const traceBuf: Record<string, { t: number; v: number }[]> = Object.fromEntries(def.channels.map((c) => [c.id, []]));
+    const traceBuf: Record<string, { t: number; v: number }[]> = Object.fromEntries(shown.map((c) => [c.id, []]));
     const spikes: { t: number; row: number }[] = [];
     let ready: ReadyInfo | null = null;
     let rowOf: Float32Array | null = null;
@@ -116,7 +100,8 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
           if (!meta) throw new Error("This experiment only runs on the local runner.");
           const g: Graph = await (await fetch(`/data/species/${def.species}/graph.json`)).json();
           if (!alive) return;
-          client = new WorkerBrain(g, meta, def.channels, { brain: brainVariant, seed, lesion: [] });
+          const m = def.dtMs ? { ...meta, sim: { ...meta.sim, dt_ms: def.dtMs } } : meta;
+          client = new WorkerBrain(g, m, def.channels, { brain: brainVariant, seed, lesion: [] });
         }
         ready = await client.init();
         if (!alive) return client.close();
@@ -143,7 +128,7 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
         const smooth = smoother.update(res.rates, TICK_MS);
         world.act(smooth, TICK_MS);
         const now = world.timeMs;
-        for (const c of def.channels) {
+        for (const c of shown) {
           const buf = traceBuf[c.id];
           buf.push({ t: now, v: res.rates[c.id] ?? 0 });
           while (buf.length && buf[0].t < now - TRACE_WINDOW_MS) buf.shift();
@@ -171,7 +156,7 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
       if (!c || !theme) return;
       const { ctx, w, h } = fitCanvas(c);
       ctx.clearRect(0, 0, w, h);
-      const rows = def.channels.length;
+      const rows = shown.length;
       const rh = h / rows;
       const now = world.timeMs;
       // ECG paper
@@ -186,7 +171,7 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
-      def.channels.forEach((ch, r) => {
+      shown.forEach((ch, r) => {
         const y0 = r * rh;
         const buf = traceBuf[ch.id];
         const max = Math.max(50, ...buf.map((p) => p.v));
@@ -274,7 +259,7 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
       mq.removeEventListener("change", onScheme);
       client?.close();
     };
-  }, [def, meta, brainVariant, seed, source, generation]);
+  }, [def, shown, meta, brainVariant, seed, source, generation]);
 
   const canBrowser = def.runsIn === "browser";
 
@@ -356,7 +341,7 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
             {perf.active.toLocaleString("en-US")} / {perf.neurons.toLocaleString("en-US")} active · {perf.realtime.toFixed(2)}× real time
           </span>
         </div>
-        <canvas ref={traces} className="traces" style={{ height: def.channels.length * (compact ? 44 : 58) }} />
+        <canvas ref={traces} className="traces" style={{ height: shown.length * (compact ? 44 : 58) }} />
         <div className="side-head">
           <span className="eyebrow">All spikes · last 2 s</span>
           <span className="small faint">sensory at top, motor at bottom</span>

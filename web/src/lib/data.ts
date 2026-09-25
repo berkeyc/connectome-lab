@@ -6,6 +6,8 @@ import type { SpeciesMeta } from "./engine/types";
 export type LibraryEntry = Partial<SpeciesMeta> &
   Pick<SpeciesMeta, "id" | "common_name" | "latin_name" | "status" | "summary" | "dataset"> & {
     available: boolean;
+    /** small enough to simulate in the browser (graph.json exists) */
+    browser: boolean;
   };
 
 export type Summary = {
@@ -40,7 +42,7 @@ export async function getSummary(id: string): Promise<Summary | null> {
 
 export const STATUS_LABEL: Record<string, string> = {
   real: "Real connectome",
-  synthetic: "Synthetic demo",
-  import: "Import required",
+  synthetic: "Teaching brain, invented numbers",
+  import: "Local runner",
   planned: "Coming",
 };

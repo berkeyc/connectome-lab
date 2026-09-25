@@ -1,21 +1,24 @@
 # Roadmap
 
-## Now (v0.1)
+## Done
 
-* Library format, importers for *C. elegans* and FlyWire, synthetic fly
-* PostgreSQL schema and eight analysis queries across species
-* Website: library, species explorer, in-browser lab with presets, lesions, control brains, share links and JSON export
+* Library format, importers for *C. elegans* and FlyWire v783, SQL layer with eight analysis queries
+* Real FlyWire circuits in the browser (escape, visuomotor) and the whole brain on the local runner
+* Experiments with live brain signals, measured results and controls on every page
+* Training lab: fixed circuit, CEM trained readout, held out episodes, controls, saved and exported runs
+* Experiment builder (JSON specs, shareable links), optional accounts with row level security, community gallery
 
 ## Next
 
-* **Real fly in the lab.** Server side simulation for the full FlyWire brain (140,000 neurons), with results cached per experiment.
-* **More animals.** Larval fly (Winding et al. 2023), *Ciona* larva (Ryan et al. 2016), male fly CNS (MaleCNS 2026).
-* **Saved experiments.** Store runs in the `experiments` table (Supabase), public experiment pages, and a gallery of the most interesting results.
+* **Real circuit parking.** Replace the last synthetic demo with a trained readout on a FlyWire circuit.
+* **More animals.** Male fly CNS (MaleCNS 2026, CC BY 4.0), larval fly (Winding et al. 2023), *Ciona* larva (Ryan et al. 2016).
+* **Whole brain training** on the local runner, with the same protocol as the browser.
+* **NeuroML export** so circuits can be run in Open Source Brain and other simulators.
 * **Graded neuron model** for worms, and a switch between models, so users can see how model choice changes the answer.
 
 ## Later
 
-* **Driving arena.** A 2D track where a connectome steers a vehicle: visual input in, descending neuron output to steering. The question: does the real brain drive better than rewired ones?
+* **Public leaderboards** of held out scores per task, always with the control runs beside them.
 * **Brain versus brain.** Run the same experiment on several species and compare responses side by side.
 * **Classroom mode.** Guided experiments for neuroscience courses.
 * **API.** Query any connectome in the library over HTTP.

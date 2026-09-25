@@ -20,6 +20,8 @@ export type Channel = {
   label: string;
   targets: Target[];
   tone?: "accent" | "warn" | "inhib" | "text";
+  /** Read by the world but not drawn as a trace. */
+  hidden?: boolean;
 };
 
 export type SenseInput = { targets: Target[]; hz: number };
@@ -57,6 +59,12 @@ export type ExperimentDef = {
   /** Rate smoothing time constant for motor channels. */
   smoothMs?: number;
   createWorld?: (seed: number) => World;
+  /** Simulation step override, ms (trained readouts use the training step). */
+  dtMs?: number;
+  /** Measured results, shown on the experiment page. */
+  findings?: { label: string; value: string }[];
+  /** "real" for measured wiring, "synthetic" for the invented teaching brain. */
+  brainKind?: "real" | "synthetic";
   /** Species used when running on the local runner, if different. */
   localSpecies?: string;
   localNotes?: string[];

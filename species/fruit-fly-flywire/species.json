@@ -1,27 +1,29 @@
 {
-  "common_name": "Fruit fly (FlyWire, real)",
+  "common_name": "Fruit fly, whole brain (FlyWire)",
   "latin_name": "Drosophila melanogaster",
   "status": "import",
-  "summary": "The complete adult female fly brain: about 140,000 neurons and 50 million synapses, reconstructed from electron microscopy by the FlyWire consortium.",
-  "dataset": "FlyWire FAFB connectome via Codex",
-  "source_url": "https://codex.flywire.ai",
-  "license": "FlyWire data terms of use apply. Not redistributed in this repository.",
+  "summary": "The complete adult female fly brain: about 139,000 neurons and 54 million synapses, reconstructed from electron microscopy by the FlyWire consortium. Runs on the local runner.",
+  "dataset": "FlyWire connectome v783 with Schlegel et al. 2024 annotations",
+  "source_url": "https://flywire.ai",
+  "license": "FlyWire connectome v783, CC BY-NC 4.0 (flywire.ai/guidelines). Connectivity table via github.com/philshiu/Drosophila_brain_model, annotations via github.com/flyconnectome/flywire_annotations.",
   "citations": [
     "Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.",
     "Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of Drosophila. Nature 634, 139-152.",
+    "Shiu, P. K. et al. (2024). A Drosophila computational brain model reveals sensorimotor processing. Nature 634, 210-219.",
     "Eckstein, N. et al. (2024). Neurotransmitter classification from electron microscopy images at synaptic sites in Drosophila melanogaster. Cell 187, 2574-2594."
   ],
   "caveats": [
-    "Transmitter types are predictions from images, with a confidence score.",
-    "Too large for in-browser simulation; use the SQL layer or a server side run."
+    "Wiring, cell types and transmitters are measured or predicted from electron microscopy. Dynamics use the published leaky integrate and fire model of Shiu et al. (2024): identical neurons, weights proportional to synapse counts, sign from the predicted transmitter.",
+    "Transmitter identities are predictions. Glutamate is treated as inhibitory, as in the published model.",
+    "Too large for real time simulation in a browser; use the local runner."
   ],
   "sign": {
     "ACH": 1,
+    "DA": 1,
+    "SER": 1,
+    "OCT": 1,
     "GABA": -1,
     "GLUT": -1,
-    "DA": 0,
-    "SER": 0,
-    "OCT": 0,
     "": 0
   },
   "sim": {
@@ -70,5 +72,9 @@
     }
   ],
   "id": "fruit-fly-flywire",
-  "stats": null
+  "stats": {
+    "neurons": 138639,
+    "connections": 15091983,
+    "synapses": 54492922
+  }
 }

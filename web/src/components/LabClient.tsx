@@ -18,10 +18,13 @@ const BRAINS: { id: BrainVariant; label: string; help: string }[] = [
 ];
 
 const encode = (ts: Target[]) => ts.map((t) => (t.side ? `${t.cell_type}@${t.side}` : t.cell_type)).join(",");
+// Shared links are untrusted input: keep only well formed names, and not too many.
 const decode = (s: string | null): Target[] =>
   (s ?? "")
+    .slice(0, 4000)
     .split(",")
-    .filter(Boolean)
+    .filter((x) => /^[A-Za-z0-9_.+-]{1,40}(@(left|right))?$/.test(x))
+    .slice(0, 64)
     .map((x) => {
       const [cell_type, side] = x.split("@");
       return side === "left" || side === "right" ? { cell_type, side } : { cell_type };
@@ -179,8 +182,8 @@ export default function LabClient({ meta, types }: { meta: SpeciesMeta; types: T
       setLesion(q.has("l") ? decode(q.get("l")) : p?.lesion ?? []);
       const b = q.get("b") as BrainVariant | null;
       if (b && BRAINS.some((x) => x.id === b)) setBrain(b);
-      const sd = Number(q.get("seed"));
-      if (sd > 0) setSeed(sd);
+      const sd = Math.floor(Number(q.get("seed")));
+      if (sd > 0 && sd < 1e6) setSeed(sd);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
     hydrated.current = true;

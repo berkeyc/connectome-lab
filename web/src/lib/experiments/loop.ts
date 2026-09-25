@@ -43,7 +43,8 @@ export function runHeadless(
 ): World {
   const seed = opts.seed ?? 1;
   const world = def.createWorld!(seed);
-  const brain = new Brain(graph, meta, { brain: opts.brain, seed, lesion: opts.lesion });
+  const m = def.dtMs ? { ...meta, sim: { ...meta.sim, dt_ms: def.dtMs } } : meta;
+  const brain = new Brain(graph, m, { brain: opts.brain, seed, lesion: opts.lesion });
   const tick = new BrainTick(brain, def.channels);
   const smooth = new Smoother(def.smoothMs ?? 100);
   const ms = opts.tickMs ?? 20;

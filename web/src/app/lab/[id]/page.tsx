@@ -22,7 +22,7 @@ export default async function LabPage(props: PageProps<"/lab/[id]">) {
   const s = await getSpecies(id);
   const summary = await getSummary(id);
   if (!s || !summary?.browserSimulation) notFound();
-  const others = (await getLibrary()).filter((x) => x.available && x.id !== id);
+  const others = (await getLibrary()).filter((x) => x.browser && x.id !== id);
 
   return (
     <div className="wrap">

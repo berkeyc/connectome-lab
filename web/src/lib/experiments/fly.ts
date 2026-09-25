@@ -7,7 +7,7 @@ import { clamp, mulberry, wrapAngle, type Metric, type SenseInput, type Theme, t
 
 type P = { x: number; y: number };
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -17,7 +17,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
-function drawFly(ctx: CanvasRenderingContext2D, x: number, y: number, heading: number, size: number, t: Theme, lift = 0, wingPhase = 0) {
+export function drawFly(ctx: CanvasRenderingContext2D, x: number, y: number, heading: number, size: number, t: Theme, lift = 0, wingPhase = 0) {
   ctx.save();
   ctx.translate(x, y - lift);
   ctx.rotate(heading);
@@ -197,9 +197,9 @@ export class LoomingWorld implements World {
 /* Car: shared kinematics                                              */
 /* ------------------------------------------------------------------ */
 
-type Car = { x: number; y: number; h: number; v: number; steer: number };
+export type Car = { x: number; y: number; h: number; v: number; steer: number };
 
-function stepCar(c: Car, targetV: number, steerCmd: number, dt: number, wheelBase: number) {
+export function stepCar(c: Car, targetV: number, steerCmd: number, dt: number, wheelBase: number) {
   c.v += clamp(targetV - c.v, -3 * dt, 3 * dt);
   c.steer += clamp(steerCmd - c.steer, -2.5 * dt, 2.5 * dt);
   c.h += (c.v / wheelBase) * Math.tan(c.steer) * dt;
@@ -207,7 +207,7 @@ function stepCar(c: Car, targetV: number, steerCmd: number, dt: number, wheelBas
   c.y += Math.sin(c.h) * c.v * dt;
 }
 
-function drawCar(ctx: CanvasRenderingContext2D, x: number, y: number, h: number, len: number, wid: number, color: string, t: Theme, withFly = false) {
+export function drawCar(ctx: CanvasRenderingContext2D, x: number, y: number, h: number, len: number, wid: number, color: string, t: Theme, withFly = false) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(h);

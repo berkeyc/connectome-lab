@@ -1,0 +1,132 @@
+{
+  "common_name": "Fruit fly visuomotor circuit (FlyWire)",
+  "latin_name": "Drosophila melanogaster",
+  "status": "real",
+  "parent": "fruit-fly-flywire",
+  "summary": "Visual projection neurons that detect looming and moving objects, the descending neurons that steer, stop, reverse and escape, and the strongest paths between them. Used for training experiments.",
+  "dataset": "Subcircuit of FlyWire v783: inputs LC4, LPLC2, LPLC1, LC16; outputs DNa01, DNa02, DNa03, DNb05, DNa11, DNp01, MDN, DNp09, DNg13, DNp03; paths with at least 40 synapses per step",
+  "source_url": "https://flywire.ai",
+  "license": "FlyWire connectome v783, CC BY-NC 4.0 (flywire.ai/guidelines). Connectivity table via github.com/philshiu/Drosophila_brain_model, annotations via github.com/flyconnectome/flywire_annotations.",
+  "citations": [
+    "Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. Nature 634, 124-138.",
+    "Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of Drosophila. Nature 634, 139-152.",
+    "Shiu, P. K. et al. (2024). A Drosophila computational brain model reveals sensorimotor processing. Nature 634, 210-219.",
+    "Eckstein, N. et al. (2024). Neurotransmitter classification from electron microscopy images at synaptic sites in Drosophila melanogaster. Cell 187, 2574-2594."
+  ],
+  "caveats": [
+    "Wiring, cell types and transmitters are measured or predicted from electron microscopy. Dynamics use the published leaky integrate and fire model of Shiu et al. (2024): identical neurons, weights proportional to synapse counts, sign from the predicted transmitter.",
+    "Transmitter identities are predictions. Glutamate is treated as inhibitory, as in the published model.",
+    "A subcircuit: neurons outside it are absent, so inputs they would provide are missing.",
+    "Selection: all LC4, LPLC2, LPLC1, LC16 and DNa01, DNa02, DNa03, DNb05, DNa11, DNp01, MDN, DNp09, DNg13, DNp03 neurons, plus neurons on paths of one or two steps between them with at least 40 synapses per step. Every synapse among the selected neurons is kept."
+  ],
+  "sign": {
+    "ACH": 1,
+    "DA": 1,
+    "SER": 1,
+    "OCT": 1,
+    "GABA": -1,
+    "GLUT": -1,
+    "": 0
+  },
+  "sim": {
+    "duration_ms": 1000,
+    "dt_ms": 0.1,
+    "v_rest": -52,
+    "v_reset": -52,
+    "v_th": -45,
+    "tau_m_ms": 20,
+    "t_ref_ms": 2.2,
+    "tau_syn_ms": 5,
+    "delay_ms": 1.8,
+    "w_syn_mv": 0.275,
+    "g_gap": 0,
+    "input_rate_hz": 150,
+    "input_w_mv": 68.75
+  },
+  "readouts": [
+    {
+      "id": "steer",
+      "label": "DNa02, right minus left",
+      "description": "Steering descending neurons.",
+      "positive": {
+        "label": "right",
+        "cell_types": [
+          "DNa02"
+        ],
+        "side": "right"
+      },
+      "negative": {
+        "label": "left",
+        "cell_types": [
+          "DNa02"
+        ],
+        "side": "left"
+      }
+    },
+    {
+      "id": "backward",
+      "label": "Moonwalker (MDN)",
+      "description": "Backward walking command.",
+      "positive": {
+        "label": "MDN",
+        "cell_types": [
+          "MDN"
+        ]
+      }
+    }
+  ],
+  "presets": [
+    {
+      "id": "lc16",
+      "label": "LC16 on both sides",
+      "description": "LC16 activation makes real flies walk backwards (Wu et al. 2016).",
+      "stimulate": [
+        {
+          "cell_type": "LC16"
+        }
+      ],
+      "lesion": [],
+      "expected": "In real flies: backward walking."
+    },
+    {
+      "id": "lplc1-right",
+      "label": "LPLC1 right",
+      "description": "Stimulate right LPLC1.",
+      "stimulate": [
+        {
+          "cell_type": "LPLC1",
+          "side": "right"
+        }
+      ],
+      "lesion": [],
+      "expected": "See which descending neurons respond."
+    }
+  ],
+  "circuit": {
+    "inputs": [
+      "LC4",
+      "LPLC2",
+      "LPLC1",
+      "LC16"
+    ],
+    "outputs": [
+      "DNa01",
+      "DNa02",
+      "DNa03",
+      "DNb05",
+      "DNa11",
+      "DNp01",
+      "MDN",
+      "DNp09",
+      "DNg13",
+      "DNp03"
+    ],
+    "min_syn": 40
+  },
+  "id": "fly-visuomotor-circuit",
+  "stats": {
+    "neurons": 1325,
+    "connections": 91241,
+    "synapses": 590700
+  }
+}

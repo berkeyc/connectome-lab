@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { simulate } from "../src/lib/engine/simulate";
 import type { BrainVariant, Graph, SpeciesMeta } from "../src/lib/engine/types";
 
-const library: (SpeciesMeta & { available: boolean })[] = JSON.parse(
+const library: (SpeciesMeta & { available: boolean; browser: boolean })[] = JSON.parse(
   readFileSync("public/data/library.json", "utf8"),
 );
 const only = process.argv[2];
@@ -16,7 +16,7 @@ const EXPECT: Record<string, { readout: string; sign: 1 | -1; min: number }> = {
   "fruit-fly-synthetic/bristle": { readout: "backward", sign: 1, min: 50 },
   "fruit-fly-synthetic/compass": { readout: "steer", sign: 1, min: 10 },
 };
-for (const meta of library.filter((m) => m.available && (!only || m.id === only))) {
+for (const meta of library.filter((m) => m.browser && (!only || m.id === only))) {
   const graph: Graph = JSON.parse(readFileSync(`public/data/species/${meta.id}/graph.json`, "utf8"));
   console.log(`\n== ${meta.common_name} (${graph.neuronIds.length} neurons)`);
   const baseline = simulate(graph, meta, { stimulate: [], lesion: [], brain: "real", seed: 1 });

@@ -100,6 +100,21 @@ export default function About() {
           Kinetics are approximate single spike values for GCaMP6s, GCaMP6f and jGCaMP8f (Chen et al. 2013, Zhang et al.
           2023). The idea follows the virtual calcium imaging in BrainGenix-NES; the implementation is our own.
         </p>
+        <p>
+          <strong>The fly.</strong> The fly in the scenes is the body model of{" "}
+          <a href="https://github.com/TuragaLab/flybody">flybody</a> (Vaxenburg et al. 2025, Nature; Apache 2.0), rebuilt for
+          the web by <code>pipeline/build_fly_model.py</code>: its 85 meshes placed on the model&apos;s joint tree, simplified
+          to about 84,000 triangles (28,000 on phones), and dressed with macro textures of a compound eye, a wing, the
+          thorax and the abdomen. Legs walk with a tripod gait, the wings fold flat at rest and beat in flight; the pose is
+          animation for the eye, not a physics simulation of the body.
+        </p>
+        <p>
+          <strong>The looming arena.</strong> The escape experiment is drawn the way it is done in the lab: a fly inside a
+          curved LED display, where the threat is a dark disc that expands with angular size 2·atan(r/d), the stimulus
+          that drives LPLC2 and the Giant Fiber (von Reyn et al. 2014; Klapoetke et al. 2017). The glossy grid floor
+          mirrors the scene. On slow or software graphics the reflection and the finer materials switch off; add{" "}
+          <code>?quality=high</code> or <code>?quality=low</code> to a page to choose.
+        </p>
 
         <h2 id="nes">Running a circuit in BrainGenix-NES</h2>
         <p>

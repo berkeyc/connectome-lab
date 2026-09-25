@@ -7,6 +7,8 @@
 * Experiments with live brain signals, measured results and controls on every page
 * Training lab: fixed circuit, CEM trained readout, held out episodes, controls, saved and exported runs
 * Experiment builder (JSON specs, shareable links), optional accounts with row level security, community gallery
+* 3D scenes with the circuit's neurons at their FlyWire positions, simulated calcium imaging, real neuron skeletons and a BrainGenix-NES bridge
+* Realistic articulated fly (flybody model, textured), LED looming arena, glossy grid floor, adaptive quality
 
 ## Next
 
@@ -14,6 +16,7 @@
 * **More animals.** Male fly CNS (MaleCNS 2026, CC BY 4.0), larval fly (Winding et al. 2023), *Ciona* larva (Ryan et al. 2016).
 * **Whole brain training** on the local runner, with the same protocol as the browser.
 * **NeuroML export** so circuits can be run in Open Source Brain and other simulators.
+* **Body physics.** Couple the circuit to the flybody body in MuJoCo on the local runner, so legs and wings are driven by physics, not animation.
 * **Graded neuron model** for worms, and a switch between models, so users can see how model choice changes the answer.
 
 ## Later

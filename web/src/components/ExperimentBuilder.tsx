@@ -111,6 +111,7 @@ export default function ExperimentBuilder() {
   const types = useMemo(() => (graph ? graph.types.filter((t) => t !== "unknown") : []), [graph]);
 
   const chooseSpecies = (s: string) => {
+    if (s === species) return; // same circuit: keep the loaded graph and the user's choices
     setGraph(null);
     setSpecies(s);
     setSpec((p) => ({ ...p, species: s, ...DEFAULTS[s] }));

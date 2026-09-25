@@ -544,6 +544,7 @@ export class ParkingWorld implements World {
       this.parkedAt = this.timeMs;
       this.parks.push(this.timeMs - this.attemptStart);
       this.events.push(`Parked in ${((this.timeMs - this.attemptStart) / 1000).toFixed(1)} s on attempt ${this.attempt}`);
+      return; // a park ends the attempt; the time limit must not also fire on this step
     }
     const lost = Math.abs(this.car.x) > 6.5 || this.car.y < -2.5;
     if (lost || this.timeMs - this.attemptStart > 25000) {

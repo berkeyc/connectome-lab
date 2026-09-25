@@ -3,8 +3,9 @@
 // worker. Loaded on demand (dynamic import) so pages without 3D stay light.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { applyHdri, Post } from "./look";
-import { animateFly, makeCar, makeFly, makeTree, rng, windowTexture, type CarModel, type FlyModel } from "./models";
+import { FlyActor, gpuTier, type Tier } from "./flymodel";
+import { applyHdri, contactShadow, Post, studioFloor, studioLights, type HdriName } from "./look";
+import { makeCar, makeTree, rng, windowTexture, type CarModel } from "./models";
 import type { LoomSnap, PlateSnap, RunnerSnap, Snap, TrackSnap } from "./snap";
 
 export type SceneKind = Snap["kind"];
@@ -25,14 +26,13 @@ function makeRenderer(canvas: HTMLCanvasElement) {
   const r = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
   r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   r.outputColorSpace = THREE.SRGBColorSpace;
-  r.toneMapping = THREE.ACESFilmicToneMapping;
-  r.toneMappingExposure = 1.05;
+  r.toneMapping = THREE.AgXToneMapping;
   r.shadowMap.enabled = true;
   r.shadowMap.type = THREE.PCFShadowMap;
   return r;
 }
 
-/** Soft studio reflections so paint, glass and water look like materials. */
+/** Soft studio reflections right away; the HDRI replaces them once decoded. */
 function environment(renderer: THREE.WebGLRenderer, scene: THREE.Scene, intensity = 0.55) {
   const pm = new THREE.PMREMGenerator(renderer);
   scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -54,12 +54,18 @@ function daylight(scene: THREE.Scene, sky: number, extent: number) {
   c.far = 90;
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.02;
-  scene.add(sun);
+  scene.add(sun, sun.target);
   return sun;
 }
 
+/** Free GPU memory, but leave assets shared between scenes (the loaded fly) alone. */
 function disposeScene(scene: THREE.Scene) {
+  const shared = new Set<THREE.Object3D>();
   scene.traverse((o) => {
+    if (o.userData.sharedAssets) o.traverse((c) => shared.add(c));
+  });
+  scene.traverse((o) => {
+    if (shared.has(o)) return;
     const m = o as THREE.Mesh;
     if (m.geometry) m.geometry.dispose();
     const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
@@ -67,10 +73,73 @@ function disposeScene(scene: THREE.Scene) {
       for (const v of Object.values(mat)) if (v instanceof THREE.Texture) v.dispose();
       mat.dispose();
     }
+    (o as unknown as { dispose?: () => void }).dispose?.();
   });
 }
 
 const reduceMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/** Frame-rate independent smoothing factor for a response rate in 1/s. */
+const damp = (rate: number, dtSec: number) => 1 - Math.exp(-rate * dtSec);
+
+/** Renderer, post chain, camera and the chores every scene shares. */
+abstract class BaseScene implements Scene3D {
+  protected scene = new THREE.Scene();
+  protected renderer: THREE.WebGLRenderer;
+  protected post: Post;
+  protected postOn = true;
+  protected mode: CameraMode = "chase";
+  protected tier: Tier;
+  protected flies: FlyActor[] = [];
+
+  constructor(
+    canvas: HTMLCanvasElement,
+    protected camera: THREE.PerspectiveCamera,
+    look: { hdri: HdriName; env: number; bloom?: number; threshold?: number; vignette?: number },
+  ) {
+    this.renderer = makeRenderer(canvas);
+    this.tier = gpuTier(this.renderer);
+    environment(this.renderer, this.scene, look.env);
+    void applyHdri(this.renderer, this.scene, look.hdri, look.env).catch(() => undefined);
+    this.post = new Post(this.renderer, this.scene, camera, { bloom: look.bloom, threshold: look.threshold, vignette: look.vignette });
+  }
+
+  protected fly(tier: Tier = this.tier, opts: { shadows?: boolean } = {}) {
+    const f = new FlyActor(tier, opts);
+    this.flies.push(f);
+    return f;
+  }
+
+  abstract update(snap: Snap, dtMs: number): void;
+
+  render() {
+    if (this.postOn) this.post.render(16);
+    else this.renderer.render(this.scene, this.camera);
+  }
+  setPost(on: boolean) {
+    this.postOn = on;
+    this.renderer.toneMapping = on ? THREE.NoToneMapping : THREE.AgXToneMapping;
+  }
+  setPixelRatio(r: number) {
+    this.renderer.setPixelRatio(r);
+  }
+  resize(w: number, h: number) {
+    this.renderer.setSize(w, h, false);
+    this.post.setSize(w, h);
+    this.camera.aspect = w / Math.max(1, h);
+    this.camera.updateProjectionMatrix();
+  }
+  setCamera(m: CameraMode) {
+    this.mode = m;
+  }
+  dispose() {
+    for (const f of this.flies) f.dispose();
+    this.post.dispose();
+    disposeScene(this.scene);
+    this.scene.environment?.dispose();
+    this.renderer.dispose();
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Race track in a small city                                          */
@@ -136,36 +205,37 @@ function band(path: ReturnType<typeof trackPath>, inner: number, outer: number, 
   return g;
 }
 
-class TrackScene implements Scene3D {
-  private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 200);
-  private renderer: THREE.WebGLRenderer;
-  private post!: Post;
-  private postOn = true;
+
+class TrackScene extends BaseScene {
   private car: CarModel;
+  private rider: FlyActor;
   private rays: THREE.Line[] = [];
   private built: string | null = null;
   private world = new THREE.Group();
-  private mode: CameraMode = "chase";
   private camPos = new THREE.Vector3(0, 8, 14);
   private camLook = new THREE.Vector3();
   private firstFrame = true;
   private sun: THREE.DirectionalLight;
   private tSec = 0;
+  private tmpA = new THREE.Vector3();
+  private tmpB = new THREE.Vector3();
 
   constructor(canvas: HTMLCanvasElement) {
-    this.renderer = makeRenderer(canvas);
-    environment(this.renderer, this.scene);
-    void applyHdri(this.renderer, this.scene, "city", 0.8).catch(() => undefined);
-    this.post = new Post(this.renderer, this.scene, this.camera, { bloom: 0.3 });
+    super(canvas, new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 200), { hdri: "city", env: 0.8, bloom: 0.3 });
     this.sun = daylight(this.scene, 0xcfdde6, 22);
     this.scene.fog = new THREE.Fog(0xcfdde6, 35, 95);
     this.scene.add(this.world);
     this.car = makeCar(0x2f9e5b);
     this.scene.add(this.car);
+    // the fly whose brain drives rides on the roof
+    this.rider = this.fly("low");
+    this.rider.scale.setScalar(0.3);
+    this.rider.position.set(-0.08, 0.537, 0);
+    this.car.add(this.rider);
     for (let k = 0; k < 2; k++) {
       const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(1, 0, 0)]);
       const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 }));
+      l.frustumCulled = false;
       this.rays.push(l);
       this.scene.add(l);
     }
@@ -274,6 +344,7 @@ class TrackScene implements Scene3D {
     }
   }
 
+
   update(s: Snap, dtMs: number) {
     if (s.kind !== "track") return;
     this.build(s.track);
@@ -284,15 +355,20 @@ class TrackScene implements Scene3D {
     this.car.rotation.y = -car.h;
     for (const f of this.car.userData.frontWheels) f.rotation.y = -car.steer * 0.9;
     for (const w of this.car.userData.wheels) w.rotation.z -= (car.v * dt) / 0.1;
+    // the rider leans into the turn
+    this.rider.rotation.x = THREE.MathUtils.lerp(this.rider.rotation.x, car.steer * 0.35, damp(6, dt));
+    this.rider.animate(dt, { flap: 0, walk: 0 });
     // sensor rays at bumper height
-    const origin = new THREE.Vector3(car.x + Math.cos(car.h) * 0.45, 0.25, car.y + Math.sin(car.h) * 0.45);
+    const origin = this.tmpA.set(car.x + Math.cos(car.h) * 0.45, 0.25, car.y + Math.sin(car.h) * 0.45);
     [
       [-0.6, s.rays.dl, s.rays.pl],
       [0.6, s.rays.dr, s.rays.pr],
     ].forEach(([a, d, prox], k) => {
-      const end = new THREE.Vector3(origin.x + Math.cos(car.h + a) * d, 0.25, origin.z + Math.sin(car.h + a) * d);
-      const g = this.rays[k].geometry as THREE.BufferGeometry;
-      g.setFromPoints([origin, end]);
+      const end = this.tmpB.set(origin.x + Math.cos(car.h + a) * d, 0.25, origin.z + Math.sin(car.h + a) * d);
+      const attr = (this.rays[k].geometry as THREE.BufferGeometry).getAttribute("position") as THREE.BufferAttribute;
+      attr.setXYZ(0, origin.x, origin.y, origin.z);
+      attr.setXYZ(1, end.x, end.y, end.z);
+      attr.needsUpdate = true;
       const m = this.rays[k].material as THREE.LineBasicMaterial;
       m.color.set(prox > 0.05 ? 0xff7a3d : 0xffffff);
       m.opacity = 0.35 + 0.65 * prox;
@@ -309,146 +385,132 @@ class TrackScene implements Scene3D {
       wantPos = new THREE.Vector3(Math.cos(a) * r, r * 0.75, Math.sin(a) * r);
       wantLook = new THREE.Vector3(0, 0, 0);
     }
-    const k = this.firstFrame ? 1 : 1 - Math.exp(-dt * 4);
+    const k = this.firstFrame ? 1 : damp(4, dt);
     this.firstFrame = false;
     this.camPos.lerp(wantPos, k);
     this.camLook.lerp(wantLook, k);
     this.camera.position.copy(this.camPos);
     this.camera.lookAt(this.camLook);
-    // keep the shadow map centred on the car
-    this.sun.position.set(car.x + 18, 30, car.y + 12);
-    this.sun.target.position.set(car.x, 0, car.y);
-    this.sun.target.updateMatrixWorld();
-  }
-
-  render() {
-    if (this.postOn) this.post.render(16);
-    else this.renderer.render(this.scene, this.camera);
-  }
-  setPost(on: boolean) {
-    this.postOn = on;
-    this.renderer.toneMapping = on ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
-  }
-  setPixelRatio(r: number) {
-    this.renderer.setPixelRatio(r);
-  }
-  resize(w: number, h: number) {
-    this.renderer.setSize(w, h, false);
-    this.post.setSize(w, h);
-    this.camera.aspect = w / Math.max(1, h);
-    this.camera.updateProjectionMatrix();
-  }
-  setCamera(m: CameraMode) {
-    this.mode = m;
-  }
-  dispose() {
-    this.post.dispose();
-    disposeScene(this.scene);
-    this.renderer.dispose();
+    // keep the shadow map centred on the car, snapped to its texels so edges do not crawl
+    const texel = (22 * 2) / 2048;
+    const sx = Math.round(car.x / texel) * texel, sz = Math.round(car.y / texel) * texel;
+    this.sun.position.set(sx + 18, 30, sz + 12);
+    this.sun.target.position.set(sx, 0, sz);
   }
 }
 
 /* ------------------------------------------------------------------ */
-/* Looming escape on a table                                           */
+/* Looming escape in an LED arena                                      */
 /* ------------------------------------------------------------------ */
 
-class LoomScene implements Scene3D {
-  private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(42, 16 / 9, 0.05, 100);
-  private renderer: THREE.WebGLRenderer;
-  private post!: Post;
-  private postOn = true;
-  private fly: FlyModel;
-  private ball: THREE.Mesh;
+/**
+ * The looming experiment as it is done in the lab: a fly, a curved LED
+ * display around it, and a dark disc that expands on the display as if an
+ * object were approaching (von Reyn et al. 2014). Angular size is 2·atan(r/d),
+ * the same stimulus the model's LPLC2 cells respond to.
+ */
+function arenaMaterial() {
+  return new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: {
+      uDir: { value: new THREE.Vector3(0, 0, 1) },
+      uSize: { value: 0 },
+      uEye: { value: new THREE.Vector3(0, 0.25, 0) },
+      uGain: { value: 1 },
+    },
+    vertexShader: `varying vec3 vW; varying vec2 vUv;
+      void main() { vUv = uv; vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+    fragmentShader: `uniform vec3 uDir; uniform float uSize; uniform vec3 uEye; uniform float uGain;
+      varying vec3 vW; varying vec2 vUv;
+      void main() {
+        // LED pixels: a grid of soft round dots
+        vec2 g = vUv * vec2(420.0, 64.0);
+        vec2 f = fract(g) - 0.5;
+        float pix = smoothstep(0.42, 0.18, length(f));
+        vec3 dir = normalize(vW - uEye);
+        float ang = acos(clamp(dot(dir, normalize(uDir)), -1.0, 1.0));
+        float lit = uSize > 0.0 ? smoothstep(uSize * 0.5 - 0.01, uSize * 0.5 + 0.01, ang) : 1.0;
+        // panel seams and a dim back plate
+        float seam = step(0.97, fract(vUv.x * 13.0)) + step(0.965, fract(vUv.y * 4.0));
+        // brighter at eye level, as the display is seen from the fly
+        float band = 0.35 + 0.65 * smoothstep(0.0, 0.5, vUv.y) * smoothstep(1.0, 0.55, vUv.y);
+        vec3 led = vec3(0.1, 0.5, 0.24) * pix * lit * uGain * band;
+        vec3 plate = vec3(0.012, 0.016, 0.02) * (1.0 - 0.6 * min(seam, 1.0));
+        float edge = smoothstep(0.0, 0.06, vUv.y) * smoothstep(1.0, 0.94, vUv.y);
+        gl_FragColor = vec4(plate + led * edge, 1.0);
+        #include <colorspace_fragment>
+      }`,
+  });
+}
+
+class LoomScene extends BaseScene {
+  private flyA: FlyActor;
+  private shadow: THREE.Mesh;
+  private arena: THREE.Mesh;
   private t = 0;
-  private mode: CameraMode = "chase";
+  private look = new THREE.Vector3(0, 0.3, 0);
+  private camPos = new THREE.Vector3(3.1, 1.25, 1.1);
+  private first = true;
 
   constructor(canvas: HTMLCanvasElement) {
-    this.renderer = makeRenderer(canvas);
-    environment(this.renderer, this.scene);
-    void applyHdri(this.renderer, this.scene, "apartment", 0.9).catch(() => undefined);
-    this.post = new Post(this.renderer, this.scene, this.camera, { bloom: 0.25 });
-    daylight(this.scene, 0xe9e5dc, 6);
-    const wood = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 0.2, 64), new THREE.MeshStandardMaterial({ color: 0xb58a5c, roughness: 0.7 }));
-    wood.position.y = -0.1;
-    wood.receiveShadow = true;
-    this.scene.add(wood);
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0xd8d2c6, roughness: 1 }));
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -3;
-    this.scene.add(floor);
-    // a fruit bowl for scale and mood
-    const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.9, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf0ede6, roughness: 0.4, side: THREE.DoubleSide }));
-    bowl.position.set(-1.8, 0.85, -1.9);
-    bowl.castShadow = true;
-    this.scene.add(bowl);
-    const fruitColors = [0xd9a441, 0xc2452d, 0x8fae3e];
-    fruitColors.forEach((c, i) => {
-      const f = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 16), new THREE.MeshStandardMaterial({ color: c, roughness: 0.5 }));
-      f.position.set(-1.8 + (i - 1) * 0.35, 0.95 + (i % 2) * 0.1, -1.9 + (i - 1) * 0.12);
-      f.castShadow = true;
-      this.scene.add(f);
-    });
-    this.fly = makeFly();
-    this.fly.scale.setScalar(0.55);
-    this.fly.rotation.y = 0.55;
-    this.scene.add(this.fly);
-    this.ball = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 24), new THREE.MeshStandardMaterial({ color: 0x1d1d20, roughness: 0.45 }));
-    this.ball.castShadow = true;
-    this.scene.add(this.ball);
-    this.camera.position.set(0, 1.4, 3.6);
-    this.camera.lookAt(0, 0.35, 0);
+    super(canvas, new THREE.PerspectiveCamera(42, 16 / 9, 0.05, 60), { hdri: "studio", env: 0.35, bloom: 0.35, threshold: 0.9 });
+    this.scene.background = new THREE.Color(0x05070a);
+    this.scene.fog = new THREE.Fog(0x05070a, 7, 18);
+    const lights = studioLights(this.scene, { extent: 2.2, shadowSize: this.tier === "high" ? 1024 : 512 });
+    lights.key.position.set(2.2, 4.2, 2.6);
+    const dbg = typeof location !== "undefined" ? new URLSearchParams(location.search).get("debug") ?? "" : "";
+    if (dbg.includes("noshadow")) this.renderer.shadowMap.enabled = false;
+    // the fly stands directly on the glossy grid floor, as in simulation renders
+    this.scene.add(studioFloor({ size: 30, cell: 0.25, reflect: this.tier === "high" && !dbg.includes("noreflect"), fade: [3.5, 11] }));
+    // curved LED display, open towards the camera
+    this.arena = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 2.2, 128, 1, true, Math.PI / 2 + 0.95, Math.PI * 2 - 1.9), arenaMaterial());
+    this.arena.position.y = 1.1;
+    this.scene.add(this.arena);
+    this.shadow = contactShadow(0.55, 0.6);
+    this.shadow.position.y = 0.002;
+    this.scene.add(this.shadow);
+    this.flyA = this.fly();
+    this.scene.add(this.flyA);
   }
 
   update(s: Snap, dtMs: number) {
     if (s.kind !== "loom") return;
     const snap = s as LoomSnap;
-    this.t += dtMs / 1000;
+    const dt = dtMs / 1000;
+    this.t += dt;
+    const u = (this.arena.material as THREE.ShaderMaterial).uniforms;
     if (snap.threat) {
-      const d = snap.threat.dist;
-      this.ball.visible = true;
-      this.ball.position.set(snap.threat.side * (0.35 + d * 0.32), 0.9 + d * 0.12, 0.15);
-    } else this.ball.visible = false;
+      // the disc comes from behind and to the side of the threat, slightly above the eye
+      u.uDir.value.set(-0.95, 0.12, 0.34 * snap.threat.side).normalize();
+      u.uSize.value = 2 * Math.atan(1 / Math.max(0.05, snap.threat.dist));
+    } else u.uSize.value = 0;
+    let lift = 0;
     if (snap.jump) {
       const k = snap.jump.k;
-      const lift = Math.sin(Math.min(1, k) * Math.PI) * 1.6;
-      this.fly.position.set(snap.jump.dir * k * 2.4, lift, -k * 0.3);
-      this.fly.rotation.z = snap.jump.dir * 0.4 * Math.sin(k * Math.PI);
-      animateFly(this.fly, this.t, { flap: 1, walk: 0 });
+      lift = 1.5 * (1 - (1 - k) * (1 - k));
+      this.flyA.position.set(0.7 * k, lift, snap.jump.dir * k * 1.1);
+      this.flyA.rotation.set(snap.jump.dir * 0.35 * Math.sin(k * Math.PI), 0, 0.25 * Math.sin(Math.min(1, k * 2) * Math.PI));
+      this.flyA.animate(dt, { flap: 1, walk: 0 });
     } else {
-      this.fly.position.set(0, 0, 0);
-      this.fly.rotation.z = 0;
-      animateFly(this.fly, this.t, { flap: 0, walk: snap.threat ? 0 : 0.15 });
+      this.flyA.position.set(0, 0, 0);
+      this.flyA.rotation.set(0, 0, 0);
+      this.flyA.animate(dt, { flap: 0, walk: snap.threat ? 0 : 0.12 });
     }
+    this.shadow.position.set(this.flyA.position.x, 0.002, this.flyA.position.z);
+    this.shadow.scale.setScalar(1 + lift * 0.8);
+    (this.shadow.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - lift * 0.7);
+    // camera: a slow drift around the arena opening, following the fly when it leaves
     const orbit = this.mode === "orbit" && !reduceMotion();
-    const a = orbit ? this.t * 0.2 : 0;
-    this.camera.position.set(Math.sin(a) * 3.6, 1.4, Math.cos(a) * 3.6);
-    this.camera.lookAt(0, 0.35, 0);
-  }
-  render() {
-    if (this.postOn) this.post.render(16);
-    else this.renderer.render(this.scene, this.camera);
-  }
-  setPost(on: boolean) {
-    this.postOn = on;
-    this.renderer.toneMapping = on ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
-  }
-  setPixelRatio(r: number) {
-    this.renderer.setPixelRatio(r);
-  }
-  resize(w: number, h: number) {
-    this.renderer.setSize(w, h, false);
-    this.post.setSize(w, h);
-    this.camera.aspect = w / Math.max(1, h);
-    this.camera.updateProjectionMatrix();
-  }
-  setCamera(m: CameraMode) {
-    this.mode = m;
-  }
-  dispose() {
-    this.post.dispose();
-    disposeScene(this.scene);
-    this.renderer.dispose();
+    // both possible disc positions stay in the frame from this angle
+    const a = Math.PI / 2 - 0.22 + (orbit ? Math.sin(this.t * 0.18) * 0.2 : 0);
+    const r = 2.5 + lift * 0.9;
+    const want = new THREE.Vector3(Math.sin(a) * r, 0.95 + lift * 0.5, Math.cos(a) * r).add(new THREE.Vector3(this.flyA.position.x * 0.5, 0, this.flyA.position.z * 0.5));
+    const k = this.first ? 1 : damp(3, dt);
+    this.first = false;
+    this.camPos.lerp(want, k);
+    this.look.lerp(new THREE.Vector3(this.flyA.position.x - 0.1, 0.22 + lift * 0.9, this.flyA.position.z), k);
+    this.camera.position.copy(this.camPos);
+    this.camera.lookAt(this.look);
   }
 }
 
@@ -474,22 +536,17 @@ function groundTexture() {
   return t;
 }
 
-class RunnerScene implements Scene3D {
-  private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(45, 16 / 9, 0.1, 200);
-  private renderer: THREE.WebGLRenderer;
-  private post!: Post;
-  private postOn = true;
-  private fly: FlyModel;
+
+class RunnerScene extends BaseScene {
+  private flyA: FlyActor;
   private tex: THREE.Texture;
   private pool: Record<string, THREE.Object3D[]> = { drop: [], stone: [], spider: [] };
   private t = 0;
+  private camX = 0;
+  private first = true;
 
   constructor(canvas: HTMLCanvasElement) {
-    this.renderer = makeRenderer(canvas);
-    environment(this.renderer, this.scene, 0.4);
-    void applyHdri(this.renderer, this.scene, "park", 0.6).catch(() => undefined);
-    this.post = new Post(this.renderer, this.scene, this.camera, { bloom: 0.25 });
+    super(canvas, new THREE.PerspectiveCamera(45, 16 / 9, 0.1, 200), { hdri: "park", env: 0.6, bloom: 0.25 });
     daylight(this.scene, 0xcfe0e8, 14);
     this.scene.fog = new THREE.Fog(0xcfe0e8, 18, 60);
     this.tex = groundTexture();
@@ -508,9 +565,9 @@ class RunnerScene implements Scene3D {
       tr.position.set(-10 + R() * 60, 0, (R() > 0.5 ? 1 : -1) * (3 + R() * 10));
       this.scene.add(tr);
     }
-    this.fly = makeFly();
-    this.fly.scale.setScalar(0.9);
-    this.scene.add(this.fly);
+    this.flyA = this.fly();
+    this.flyA.scale.setScalar(0.9);
+    this.scene.add(this.flyA);
   }
 
   private obstacle(kind: "drop" | "stone" | "spider", i: number) {
@@ -557,10 +614,12 @@ class RunnerScene implements Scene3D {
     return list[i];
   }
 
+
   update(s: Snap, dtMs: number) {
     if (s.kind !== "runner") return;
     const snap = s as RunnerSnap;
-    this.t += dtMs / 1000;
+    const dt = dtMs / 1000;
+    this.t += dt;
     this.tex.offset.x = (snap.scroll / 5) % 1;
     const used: Record<string, number> = { drop: 0, stone: 0, spider: 0 };
     for (const o of snap.obstacles) {
@@ -571,34 +630,14 @@ class RunnerScene implements Scene3D {
       if (o.kind === "stone") m.rotation.z = -o.x * 0.9;
     }
     for (const k of Object.keys(this.pool)) this.pool[k].forEach((m, i) => (m.visible = i < used[k]));
-    this.fly.position.set(snap.flyX, snap.flyY, 0);
-    this.fly.rotation.z = snap.flyY > 0.05 ? 0.25 : 0;
-    animateFly(this.fly, this.t, { flap: snap.flyY > 0.05 ? 1 : 0, walk: snap.dead ? 0 : 1 });
-    this.camera.position.set(snap.flyX + 0.7, 1.5, 5.0);
-    this.camera.lookAt(snap.flyX + 1.5, 0.5, 0);
-  }
-  render() {
-    if (this.postOn) this.post.render(16);
-    else this.renderer.render(this.scene, this.camera);
-  }
-  setPost(on: boolean) {
-    this.postOn = on;
-    this.renderer.toneMapping = on ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
-  }
-  setPixelRatio(r: number) {
-    this.renderer.setPixelRatio(r);
-  }
-  resize(w: number, h: number) {
-    this.renderer.setSize(w, h, false);
-    this.post.setSize(w, h);
-    this.camera.aspect = w / Math.max(1, h);
-    this.camera.updateProjectionMatrix();
-  }
-  setCamera() {}
-  dispose() {
-    this.post.dispose();
-    disposeScene(this.scene);
-    this.renderer.dispose();
+    this.flyA.position.set(snap.flyX, snap.flyY, 0);
+    const air = snap.flyY > 0.05;
+    this.flyA.rotation.z = THREE.MathUtils.lerp(this.flyA.rotation.z, air ? 0.25 : 0, damp(10, dt));
+    this.flyA.animate(dt, { flap: air ? 1 : 0, walk: snap.dead ? 0 : 1 });
+    this.camX = this.first ? snap.flyX : this.camX + (snap.flyX - this.camX) * damp(8, dt);
+    this.first = false;
+    this.camera.position.set(this.camX + 0.9, 1.15, 3.8);
+    this.camera.lookAt(this.camX + 1.6, 0.4, 0);
   }
 }
 
@@ -606,38 +645,34 @@ class RunnerScene implements Scene3D {
 /* Worm on an agar plate                                               */
 /* ------------------------------------------------------------------ */
 
-class PlateScene implements Scene3D {
-  private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.01, 50);
-  private renderer: THREE.WebGLRenderer;
-  private post!: Post;
-  private postOn = true;
+class PlateScene extends BaseScene {
   private worm: THREE.Mesh;
   private trail: THREE.Line;
   private lawn: THREE.Mesh;
   private rim: THREE.Mesh;
   private t = 0;
-  private mode: CameraMode = "chase";
+  private camPos = new THREE.Vector3(0, 1.7, 1.7);
+  private camLook = new THREE.Vector3();
+  private first = true;
+  private lastTrail = -1;
 
   constructor(canvas: HTMLCanvasElement) {
-    this.renderer = makeRenderer(canvas);
-    environment(this.renderer, this.scene, 0.8);
-    void applyHdri(this.renderer, this.scene, "studio", 0.9).catch(() => undefined);
-    this.post = new Post(this.renderer, this.scene, this.camera, { bloom: 0.2 });
-    daylight(this.scene, 0x1c1f22, 2);
-    this.scene.background = new THREE.Color(0x202326);
-    const bench = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0x2c3034, roughness: 0.8 }));
-    bench.rotation.x = -Math.PI / 2;
+    super(canvas, new THREE.PerspectiveCamera(38, 16 / 9, 0.01, 50), { hdri: "studio", env: 0.35, bloom: 0.2 });
+    this.mode = "orbit";
+    this.scene.background = new THREE.Color(0x0a0c0f);
+    this.scene.fog = new THREE.Fog(0x0a0c0f, 4, 12);
+    const lights = studioLights(this.scene, { extent: 1.4, shadowSize: this.tier === "high" ? 1024 : 512 });
+    lights.key.intensity = 1.7; // the pale agar would otherwise burn out
+    const bench = studioFloor({ size: 20, cell: 0.2, reflect: false, fade: [2.5, 7], color: 0x14181c });
     bench.position.y = -0.06;
-    bench.receiveShadow = true;
     this.scene.add(bench);
-    const agar = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.06, 96), new THREE.MeshPhysicalMaterial({ color: 0xe8c98a, roughness: 0.25, transmission: 0.2, thickness: 0.1 }));
+    const agar = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.06, 96), new THREE.MeshPhysicalMaterial({ color: 0xb08f58, roughness: 0.55, clearcoat: 0.15, clearcoatRoughness: 0.4, envMapIntensity: 0.4, specularIntensity: 0.4 }));
     agar.position.y = -0.03;
     agar.receiveShadow = true;
     this.scene.add(agar);
     this.rim = new THREE.Mesh(
       new THREE.CylinderGeometry(1.04, 1.04, 0.16, 96, 1, true),
-      new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.05, transmission: 0.9, transparent: true, opacity: 0.35, side: THREE.DoubleSide }),
+      new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.05, metalness: 0, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false }),
     );
     this.rim.position.y = 0.02;
     this.scene.add(this.rim);
@@ -652,11 +687,12 @@ class PlateScene implements Scene3D {
     g.fillStyle = grad;
     g.fillRect(0, 0, 128, 128);
     const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
     this.lawn = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
     this.lawn.rotation.x = -Math.PI / 2;
     this.lawn.position.y = 0.003;
     this.scene.add(this.lawn);
-    this.worm = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshPhysicalMaterial({ color: 0xe9ddd0, roughness: 0.35, transmission: 0.25, thickness: 0.05, clearcoat: 0.6 }));
+    this.worm = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshPhysicalMaterial({ color: 0xf2e6d8, roughness: 0.3, sheen: 0.6, sheenColor: new THREE.Color(0xffffff), clearcoat: 0.8, emissive: 0x2a241e }));
     this.worm.castShadow = true;
     this.scene.add(this.worm);
     this.trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x8a6b3c, transparent: true, opacity: 0.5 }));
@@ -666,21 +702,26 @@ class PlateScene implements Scene3D {
   update(s: Snap, dtMs: number) {
     if (s.kind !== "plate") return;
     const snap = s as PlateSnap;
-    this.t += dtMs / 1000;
+    const dt = dtMs / 1000;
+    this.t += dt;
     if (snap.food) {
       this.lawn.visible = true;
       this.lawn.position.set(snap.food.x, 0.003, snap.food.y);
       this.lawn.scale.setScalar(snap.foodSigma * 4.4);
     } else this.lawn.visible = false;
     (this.rim.material as THREE.MeshPhysicalMaterial).color.set(snap.touching ? 0xffb07a : 0xffffff);
-    const pts = snap.trail.map((p) => new THREE.Vector3(p.x, 0.0025, p.y));
-    this.trail.geometry.dispose();
-    this.trail.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+    // the trail only changes when the world adds a point; rebuild it then, not every frame
+    const tail = snap.trail[snap.trail.length - 1];
+    const key = snap.trail.length + (tail ? tail.x * 1e3 + tail.y : 0);
+    if (key !== this.lastTrail) {
+      this.lastTrail = key;
+      this.trail.geometry.dispose();
+      this.trail.geometry = new THREE.BufferGeometry().setFromPoints(snap.trail.map((p) => new THREE.Vector3(p.x, 0.0025, p.y)));
+    }
     // body: the last stretch of the track, about a millimetre long
     const body: THREE.Vector3[] = [];
     let len = 0;
-    const head = new THREE.Vector3(snap.head.x, 0.012, snap.head.y);
-    body.push(head);
+    body.push(new THREE.Vector3(snap.head.x, 0.012, snap.head.y));
     for (let i = snap.trail.length - 1; i >= 0 && len < 0.22; i--) {
       const q = new THREE.Vector3(snap.trail[i].x, 0.012, snap.trail[i].y);
       const d = q.distanceTo(body[body.length - 1]);
@@ -689,45 +730,25 @@ class PlateScene implements Scene3D {
       body.push(q);
     }
     if (body.length >= 3) {
-      const curve = new THREE.CatmullRomCurve3(body);
       this.worm.geometry.dispose();
-      const tube = new THREE.TubeGeometry(curve, 48, 0.014, 10, false);
-      this.worm.geometry = tube;
+      this.worm.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(body), 48, 0.018, 10, false);
     }
-    const orbit = this.mode === "orbit" && !reduceMotion();
-    const a = orbit ? this.t * 0.1 : 0.4;
-    if (this.mode === "chase" && !orbit) {
-      this.camera.position.set(snap.head.x * 0.5, 0.9, snap.head.y * 0.5 + 1.0);
-      this.camera.lookAt(snap.head.x * 0.8, 0, snap.head.y * 0.8);
+    const wantPos = new THREE.Vector3();
+    const wantLook = new THREE.Vector3();
+    if (this.mode === "chase") {
+      // close over the worm's shoulder
+      wantPos.set(snap.head.x - Math.cos(snap.heading) * 0.45, 0.55, snap.head.y - Math.sin(snap.heading) * 0.45);
+      wantLook.set(snap.head.x + Math.cos(snap.heading) * 0.2, 0, snap.head.y + Math.sin(snap.heading) * 0.2);
     } else {
-      this.camera.position.set(Math.sin(a) * 1.7, 1.7, Math.cos(a) * 1.7);
-      this.camera.lookAt(0, 0, 0);
+      const a = reduceMotion() ? 0.4 : 0.4 + this.t * 0.1;
+      wantPos.set(Math.sin(a) * 1.4, 1.45, Math.cos(a) * 1.4);
     }
-  }
-  render() {
-    if (this.postOn) this.post.render(16);
-    else this.renderer.render(this.scene, this.camera);
-  }
-  setPost(on: boolean) {
-    this.postOn = on;
-    this.renderer.toneMapping = on ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
-  }
-  setPixelRatio(r: number) {
-    this.renderer.setPixelRatio(r);
-  }
-  resize(w: number, h: number) {
-    this.renderer.setSize(w, h, false);
-    this.post.setSize(w, h);
-    this.camera.aspect = w / Math.max(1, h);
-    this.camera.updateProjectionMatrix();
-  }
-  setCamera(m: CameraMode) {
-    this.mode = m;
-  }
-  dispose() {
-    this.post.dispose();
-    disposeScene(this.scene);
-    this.renderer.dispose();
+    const k = this.first ? 1 : damp(3, dt);
+    this.first = false;
+    this.camPos.lerp(wantPos, k);
+    this.camLook.lerp(wantLook, k);
+    this.camera.position.copy(this.camPos);
+    this.camera.lookAt(this.camLook);
   }
 }
 

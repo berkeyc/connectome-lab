@@ -16,7 +16,14 @@ The core question behind every experiment: *how much behaviour can the wiring pr
 
 ## Experiments
 
-Brains in bodies, live in the browser, in 3D (three.js): a car in a small city, a fly on a table, a worm on an agar plate. Beside the scene, the circuit's neurons light up at their measured FlyWire positions as they spike, next to a model of the fly, and a sidebar shows the brain's signals as scrolling traces, every spike and an event log. A flat map view is one click away.
+Brains in bodies, live in the browser, in 3D (three.js): a fly in an LED arena where a looming disc triggers its escape, a car in a small city with the fly riding on the roof, a fly running along a path, a worm on an agar plate. Beside the scene, the circuit's neurons light up at their measured FlyWire positions as they spike, next to the fly in a small studio, and a sidebar shows the brain's signals as scrolling traces, every spike and an event log. A flat map view is one click away.
+
+<p align="center">
+  <img src="docs/img/looming-arena.jpg" width="49%" alt="A realistic fruit fly on a glossy grid floor inside a curved LED arena; a dark looming disc appears on the display; the neural activity panel lights up">
+  <img src="docs/img/take-off.jpg" width="49%" alt="The same fly taking off with its wings spread, the looming disc grown large behind it">
+</p>
+
+**The fly and the look.** The fly is the body model of [flybody](https://github.com/TuragaLab/flybody) (Vaxenburg et al. 2025, *Nature*, Apache 2.0), rebuilt for the web by `pipeline/build_fly_model.py`: 85 meshes on the model's joint tree, simplified to about 84,000 triangles (28,000 on phones), compressed with meshopt (620 kB) and dressed with macro textures of a compound eye, an iridescent wing, the hairy thorax and the banded abdomen. It walks with a tripod gait, folds its wings flat at rest and beats them in flight. Scenes use image based lighting from CC0 HDRIs, a glossy grid floor that mirrors the scene, AgX tone mapping, gentle bloom and SMAA. Frames are drawn between simulation steps (interpolated), the resolution adapts to keep 60 fps, and slow or software graphics get the light model without reflections. `?quality=high` or `?quality=low` on any page overrides the choice.
 
 The neural activity panel can switch between **spikes** and **simulated calcium imaging** (GCaMP6s, GCaMP6f or jGCaMP8f kinetics with saturation and shot noise, the way a microscope would see the circuit), shows the envelope of the whole fly brain fitted to all 138,639 FlyWire neuron positions (`pipeline/make_brain_surface.py`), and on request loads the **real skeletons** of up to 48 neurons of the circuit from the FlyWire v783 skeletons published by the Cambridge fly connectome group. Every fly experiment now runs on circuits cut from the real FlyWire connectome (v783).
 
@@ -152,10 +159,11 @@ An `experiments` table is ready for storing runs from the website.
 
 ```
 species/        the library: one folder per species (committed when small)
-pipeline/       importers, PostgreSQL loader, web bundle builder
+pipeline/       importers, PostgreSQL loader, web bundle builder, brain envelope and fly model builders
 db/             schema, views and analysis queries
 web/            Next.js site; engine in web/src/lib/engine, experiments in web/src/lib/experiments,
-                training in web/src/lib/training
+                training in web/src/lib/training, 3D in web/src/lib/three, fly model and textures in
+                web/public/models and web/public/textures
 supabase/       database migrations for optional accounts (row level security on every table)
 local/          local runner for connectomes too big for a browser, and the BrainGenix-NES bridge
 docs/           roadmap and contributor guides
@@ -171,6 +179,7 @@ data/           large or raw downloads (not committed)
 * Most worm neurons are graded rather than spiking, so the worm model is a strong simplification.
 * Transmitter identities are partly predicted, and the sign of glutamate depends on the receptor. Each species file states the convention it uses.
 * The synthetic fly is for teaching only and is labelled wherever it appears.
+* The fly's walking and wing beats are animation driven by the circuit's output, not a physics simulation of the body (flybody itself runs in MuJoCo; that coupling is on the roadmap).
 
 ## Roadmap
 
@@ -188,10 +197,17 @@ Each species page and `species.json` lists its sources. The main ones:
 * Wang, C. et al. (2024). A neurotransmitter atlas of *C. elegans* males and hermaphrodites. *eLife* 13, RP95402.
 * Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. *Nature* 634, 124–138.
 * Shiu, P. K. et al. (2024). A *Drosophila* computational brain model reveals sensorimotor processing. *Nature* 634, 210–219.
+* Vaxenburg, R. et al. (2025). Whole-body physics simulation of fruit fly locomotion. *Nature* 643, 1312–1320 (the fly body model).
 * Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of *Drosophila*. *Nature* 634, 139–152.
 * OpenWorm ConnectomeToolbox: https://github.com/openworm/ConnectomeToolbox
+
+## Concept
+
+The look the project aims for, from a concept image (in Turkish: "Discover the secrets of the brain with the fruit fly"):
+
+<p align="center"><img src="docs/img/concept-tr.jpg" width="70%" alt="Concept image: a fruit fly on a simulation floor in a neural explorer interface, with a live neural activity panel"></p>
 
 ## Author
 
 **Berke Yaşar Çelik** · Management Information Systems, Ankara.
-Code under the MIT licence. Datasets remain under their original terms.
+Code under the MIT licence. Datasets remain under their original terms. Third party assets and their licences are listed in [NOTICE](NOTICE).

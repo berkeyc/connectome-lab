@@ -61,7 +61,8 @@ export function validateRun(x: unknown): RunRecord {
     variant: r.variant as CircuitVariant,
     cem: {
       population: clampInt(cem.population, 4, 128),
-      elites: clampInt(cem.elites, 2, 64),
+      // elites must be fewer than the population, or selection keeps everyone
+      elites: clampInt(cem.elites, 2, Math.max(2, clampInt(cem.population, 4, 128) - 1)),
       initStd: Math.max(0.01, Math.min(5, cem.initStd as number)),
       extraNoise: Math.max(0, Math.min(1, cem.extraNoise as number)),
       seed: clampInt(cem.seed, 0, 1e9),

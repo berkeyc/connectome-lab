@@ -31,13 +31,25 @@ export class TrainPool {
               this.pending.delete(m.id);
             }
           };
-          w.onerror = (e) => reject(new Error(e.message || "Training worker failed"));
+          w.onerror = (e) => {
+            // a crashed worker never answers: fail everything waiting on the pool
+            const err = new Error(e.message || "Training worker failed");
+            reject(err);
+            for (const p of this.pending.values()) p.reject(err);
+            this.pending.clear();
+          };
         }),
       );
       w.postMessage({ type: "init", taskId, spec, graph, meta, variant, circuitSeed });
       this.workers.push(w);
     }
-    await Promise.all(ready);
+    try {
+      await Promise.all(ready);
+    } catch (e) {
+      // do not leave the workers that did start running in the background
+      this.close();
+      throw e;
+    }
   }
 
   private run(w: Worker, weights: number[][], set: "train" | "heldOut", seed: number) {

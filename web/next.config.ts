@@ -9,7 +9,8 @@ const supabaseHost = supabase ? new URL(supabase).host : "";
 // Cambridge fly connectome server, and, when accounts are on, Supabase.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  // wasm-unsafe-eval lets the meshopt decoder (WebAssembly) unpack the fly model; it does not allow eval()
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data:",
   "font-src 'self'",

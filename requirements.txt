@@ -2,3 +2,6 @@ pandas>=2.0
 psycopg[binary]>=3.1
 # worm importer only: OpenWorm ConnectomeToolbox
 # cect
+# fly model builder only (pipeline/build_fly_model.py)
+# fast_simplification>=0.1
+# pygltflib>=1.16

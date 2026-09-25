@@ -2,9 +2,10 @@
 // position, shown either as spikes (instant flashes) or as simulated calcium
 // imaging (slow green fluorescence, as a microscope would see it). Optional:
 // the envelope of the whole fly brain, and the real skeletons of chosen neurons.
-// Also a small fly panel.
+// Also the fly panel: the realistic fly in a small studio.
 import * as THREE from "three";
-import { animateFly, makeFly, type FlyModel } from "./models";
+import { FlyActor, gpuTier } from "./flymodel";
+import { applyHdri, contactShadow, studioFloor, studioLights } from "./look";
 import { fetchSkeletons } from "./skeletons";
 
 const CLASS_COLOR: Record<string, number> = {
@@ -18,6 +19,8 @@ const CLASS_COLOR: Record<string, number> = {
   motor: 0x5ecb8f,
   other: 0x8c96a3,
 };
+
+const WARM = new THREE.Color(1, 0.97, 0.9);
 
 /** Spike counts per neuron since the last frame, written by the brain loop. */
 export type SpikeBus = { n: number; activity: Float32Array };
@@ -94,14 +97,18 @@ export class BrainView {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(P, 3));
     g.setAttribute("color", new THREE.BufferAttribute(col, 3));
-    this.act = new THREE.BufferAttribute(new Float32Array(n), 1);
-    this.calc = new THREE.BufferAttribute(new Float32Array(n), 1);
+    this.act = new THREE.BufferAttribute(new Float32Array(n), 1).setUsage(THREE.DynamicDrawUsage);
+    this.calc = new THREE.BufferAttribute(new Float32Array(n), 1).setUsage(THREE.DynamicDrawUsage);
     g.setAttribute("activity", this.act);
     g.setAttribute("calcium", this.calc);
     const mat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
+      // max blending: where points overlap the brightest wins, so dense clusters glow but never add up to white
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.MaxEquation,
+      blendSrc: THREE.OneFactor,
+      blendDst: THREE.OneFactor,
       uniforms: { scale: { value: 1 }, mode: { value: 0 }, dist: { value: 1000 } },
       vertexShader: `
         attribute vec3 color; attribute float activity; attribute float calcium;
@@ -110,7 +117,7 @@ export class BrainView {
         void main() {
           vColor = color; vA = activity; vC = calcium;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          float s = mode < 0.5 ? (4.5 + 9.0 * activity) : (5.0 + 7.0 * calcium);
+          float s = mode < 0.5 ? (4.5 + 6.0 * activity) : (5.0 + 7.0 * calcium);
           gl_PointSize = scale * s * 1.3 * (dist / -mv.z);
           gl_Position = projectionMatrix * mv;
         }`,
@@ -123,14 +130,17 @@ export class BrainView {
           float glow = smoothstep(0.5, 0.0, r);
           if (mode < 0.5) {
             // dim anatomy, activity ramps from the cell class colour to warm light, never to white
+            // additive blending adds up overlapping points, so each one stays modest
             float a = sqrt(vA);
-            vec3 hot = mix(vColor, vec3(1.0, 0.82, 0.5), a);
+            vec3 hot = mix(vColor, vec3(1.0, 0.8, 0.5), a * 0.8);
             vec3 col = mix(vColor * 0.35, hot, a);
-            gl_FragColor = vec4(col, glow * (0.28 + 0.62 * a));
+            float k = glow * (0.3 + 0.7 * a);
+            gl_FragColor = vec4(col * k, k);
           } else {
             // GCaMP green on a dark field: dim baseline, bright when calcium rises
             vec3 col = mix(vec3(0.05, 0.16, 0.08), vec3(0.55, 1.0, 0.45), vC);
-            gl_FragColor = vec4(col, glow * (0.18 + 0.82 * vC));
+            float k = glow * (0.25 + 0.75 * vC);
+            gl_FragColor = vec4(col * k, k);
           }
         }`,
     });
@@ -254,13 +264,14 @@ export class BrainView {
       const noise = ((this.rnd / 4294967296) - 0.5) * 0.08;
       ca[i] = Math.min(1, Math.max(0, f / (f + 2.5) + noise));
     }
-    this.act.needsUpdate = true;
-    this.calc.needsUpdate = true;
+    // upload only what is on screen
+    if (this.mode === "calcium") this.calc.needsUpdate = true;
+    else this.act.needsUpdate = true;
     for (const s of this.skeletons) {
       const v = this.mode === "calcium" ? ca[s.idx] : a[s.idx];
       const m = s.line.material as THREE.LineBasicMaterial;
       if (this.mode === "calcium") m.color.setRGB(0.08 + 0.5 * v, 0.2 + 0.8 * v, 0.1 + 0.35 * v);
-      else m.color.copy(s.base).multiplyScalar(0.7).lerp(new THREE.Color(1, 0.97, 0.9), v * 0.6);
+      else m.color.copy(s.base).multiplyScalar(0.7).lerp(WARM, v * 0.6);
       m.opacity = 0.12 + 0.55 * v;
     }
     if (spin) this.angle += dtMs * 0.00012;
@@ -293,45 +304,72 @@ export class BrainView {
 
 export class FlyView {
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+  private camera = new THREE.PerspectiveCamera(30, 1, 0.05, 50);
   private renderer: THREE.WebGLRenderer;
-  private fly: FlyModel;
+  private fly: FlyActor;
+  private shadow: THREE.Mesh;
   private t = 0;
+  private yaw = 0.7;
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 1.6));
-    const key = new THREE.DirectionalLight(0xfff0dd, 2.2);
-    key.position.set(2, 3, 2);
-    this.scene.add(key);
-    const rim = new THREE.DirectionalLight(0x9fc7ff, 1.2);
-    rim.position.set(-3, 1, -2);
-    this.scene.add(rim);
-    this.fly = makeFly();
+    this.renderer.toneMapping = THREE.AgXToneMapping;
+    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    const tier = gpuTier(this.renderer);
+    // a small photo studio: key, rim and fill light, a dark grid floor, image based reflections
+    const { key } = studioLights(this.scene, { extent: 0.9, shadowSize: tier === "high" ? 1024 : 512 });
+    key.position.set(1.6, 3, 1.8);
+    void applyHdri(this.renderer, this.scene, "studio", 0.45).catch(() => undefined);
+    const floor = studioFloor({ size: 12, cell: 0.2, reflect: false, fade: [1.8, 4.5], color: 0x0c1015 });
+    this.scene.add(floor);
+    this.shadow = contactShadow(0.62, 0.65);
+    this.shadow.position.y = 0.002;
+    this.scene.add(this.shadow);
+    this.fly = new FlyActor(tier);
     this.scene.add(this.fly);
-    this.camera.position.set(1.9, 2.1, 2.6);
-    this.camera.lookAt(-0.08, 0.28, 0);
+    this.camera.position.set(1.7, 1.05, 1.9);
+    this.camera.lookAt(0, 0.2, 0);
   }
 
   /** turn: -1 left to 1 right; flap and walk 0 to 1. */
   render(dtMs: number, opts: { turn: number; flap: number; walk: number; spin: boolean }) {
-    this.t += dtMs / 1000;
-    this.fly.rotation.y = (opts.spin ? this.t * 0.35 : 0.7) - opts.turn * 0.5;
-    this.fly.rotation.x = opts.turn * 0.15;
-    animateFly(this.fly, this.t, { flap: opts.flap, walk: opts.walk });
+    const dt = Math.min(0.1, dtMs / 1000);
+    this.t += dt;
+    const want = (opts.spin ? this.t * 0.35 : 0.7) - opts.turn * 0.5;
+    this.yaw += (want - this.yaw) * (1 - Math.exp(-dt * 6));
+    this.fly.rotation.y = this.yaw;
+    this.fly.rotation.x = THREE.MathUtils.lerp(this.fly.rotation.x, opts.turn * 0.12, 1 - Math.exp(-dt * 6));
+    // a flying fly hovers a little above the floor
+    const hover = opts.flap > 0.02 ? 0.12 + Math.sin(this.t * 3) * 0.02 : 0;
+    this.fly.position.y += (hover - this.fly.position.y) * (1 - Math.exp(-dt * 8));
+    this.shadow.scale.setScalar(1 + this.fly.position.y * 1.5);
+    this.fly.animate(dt, { flap: opts.flap, walk: opts.walk });
     this.renderer.render(this.scene, this.camera);
   }
 
   resize(w: number, h: number) {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h);
+    // keep the whole fly in frame on tall, narrow panels
+    this.camera.fov = this.camera.aspect < 1 ? 30 / Math.max(0.55, this.camera.aspect) : 30;
     this.camera.updateProjectionMatrix();
   }
 
   dispose() {
+    this.fly.dispose();
+    const shared = new Set<THREE.Object3D>();
+    this.scene.traverse((o) => o.userData.sharedAssets && o.traverse((c) => shared.add(c)));
+    this.scene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh || shared.has(o)) return;
+      m.geometry.dispose();
+      (m.material as THREE.Material).dispose();
+    });
+    this.scene.environment?.dispose();
     this.renderer.dispose();
   }
 }

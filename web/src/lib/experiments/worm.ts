@@ -108,6 +108,9 @@ export class WormWorld implements World {
 
     if (speed >= 0) {
       this.head = { x: this.head.x + Math.cos(this.heading) * speed * dt, y: this.head.y + Math.sin(this.heading) * speed * dt };
+      // stay inside the dish before the point joins the track, so the track never leaves it
+      const rr = Math.hypot(this.head.x, this.head.y);
+      if (rr > DISH_R) this.head = { x: (this.head.x / rr) * DISH_R, y: (this.head.y / rr) * DISH_R };
       const last = this.trail[this.trail.length - 1];
       if (Math.hypot(this.head.x - last.x, this.head.y - last.y) > 0.004) this.trail.push({ ...this.head });
       if (this.trail.length > 600) this.trail.shift();

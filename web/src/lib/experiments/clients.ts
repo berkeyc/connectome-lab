@@ -136,6 +136,9 @@ export class LocalBrain implements BrainClient {
           resolve(m);
         } else if (m.type === "error") {
           fail(m.message);
+          // after start up an error concerns the running steps: fail them so the page can show it
+          for (const p of this.pending.values()) p.reject(new Error(m.message));
+          this.pending.clear();
         } else if (m.type === "tick") {
           this.pending.get(m.id)?.resolve(m);
           this.pending.delete(m.id);

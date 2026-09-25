@@ -171,6 +171,15 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
       }
     };
 
+    // Run as many brain steps as the elapsed time asks for. One step per frame
+    // would slow the simulation down whenever the page draws below 50 fps, so
+    // each finished step starts the next one while there is time left over.
+    const pump = () => {
+      if (!alive || failed || !runningRef.current || inFlight || budget < TICK_MS) return;
+      budget -= TICK_MS;
+      void doTick().then(pump);
+    };
+
     const drawTraces = () => {
       const c = traces.current;
       if (!c || !theme) return;
@@ -247,13 +256,10 @@ export default function ExperimentPlayer({ experimentId, meta, compact = false, 
       if (traces.current) {
         theme ??= readTheme(traces.current);
         if (runningRef.current && !failed) {
-          budget += dt * speedRef.current;
+          // at most a quarter second of backlog, so a slow machine lags instead of freezing
+          budget = Math.min(budget + dt * speedRef.current, TICK_MS * 12);
           wallAcc += dt;
-          if (budget >= TICK_MS && !inFlight) {
-            budget -= TICK_MS;
-            budget = Math.min(budget, TICK_MS * 4); // do not accumulate a backlog
-            doTick();
-          }
+          pump();
         }
         if (stage.current && viewRef.current === "2d") {
           const { ctx, w, h } = fitCanvas(stage.current);

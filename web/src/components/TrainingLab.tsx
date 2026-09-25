@@ -74,6 +74,7 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
   const historyRef = useRef<GenStat[]>([]);
   const phaseRef = useRef<Phase>("idle");
   const loopToken = useRef(0);
+  const mounted = useRef(true);
   const [playKey, setPlayKey] = useState(0);
 
   useEffect(() => {
@@ -172,10 +173,15 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
       }
       setPhase("loading");
       phaseRef.current = "loading";
+      const token = ++loopToken.current;
       await ensurePool();
+      // paused, reset, switched circuit or left the page while the workers were starting
+      if (!mounted.current || token !== loopToken.current) {
+        if (!mounted.current || (phaseRef.current as Phase) !== "paused") stopPool();
+        return;
+      }
       setPhase("training");
       phaseRef.current = "training";
-      const token = ++loopToken.current;
       await trainLoop(token);
     } catch (e) {
       if (phaseRef.current === "idle") return; // stopped on purpose
@@ -213,9 +219,15 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
     setVariant(v);
   };
 
-  useEffect(() => () => {
-    loopToken.current++;
-    stopPool();
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      // a counter, not a DOM node: bumping it stops any running training loop
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      loopToken.current++;
+      stopPool();
+    };
   }, []);
 
   /* ---------------- save, load, export ---------------- */
@@ -256,6 +268,11 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
   };
 
   const resume = (r: RunRecord) => {
+    // runs saved by an older version of a task can have another readout size
+    if (r.state.mean.length !== dim) {
+      setNote(`“${runLabel(r)}” was trained with a different readout (${r.state.mean.length} weights, this task has ${dim}) and cannot be loaded.`);
+      return;
+    }
     reset();
     setVariant(r.variant);
     setPopulation(r.cem.population);
@@ -271,9 +288,11 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
   const importFile = async (f: File) => {
     try {
       if (f.size > 2_000_000) throw new Error("File too large");
-      const r = validateRun(JSON.parse(await f.text()));
-      if (r.taskId !== task.id) throw new Error(`This run belongs to another task (${r.taskId})`);
-      if (r.state.mean.length !== dim) throw new Error("This run has a different readout size");
+      const parsed = validateRun(JSON.parse(await f.text()));
+      if (parsed.taskId !== task.id) throw new Error(`This run belongs to another task (${parsed.taskId})`);
+      if (parsed.state.mean.length !== dim) throw new Error("This run has a different readout size");
+      // an imported file gets its own id, so saving it never collides with the exporter's copy
+      const r = { ...parsed, id: newRunId() };
       resume(r);
     } catch (e) {
       setNote(`Could not import: ${e instanceof Error ? e.message : e}`);
@@ -316,6 +335,8 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
       world = task.createWorld(specs[ep].spec, HELD_OUT_SEED);
       worldRef.current = world;
       smooth = new Smoother(task.smoothMs);
+      // world time restarts at 0, so spikes of the last episode would never age out
+      spikeBuf.length = 0;
       setEpisodeLabel(`${specs[ep].held ? "Held out" : "Training"} · ${specs[ep].spec.label}`);
     };
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -336,6 +357,7 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
           if (bus) for (const i of r.spikes.i) if (i < bus.n) bus.activity[i] += 1;
           for (let k = 0; k < r.spikes.i.length; k += 2) spikeBuf.push({ t: now + r.spikes.t[k], row: r.spikes.i[k] / n });
           while (spikeBuf.length && spikeBuf[0].t < now - 2000) spikeBuf.shift();
+          if (spikeBuf.length > 20000) spikeBuf.splice(0, spikeBuf.length - 20000);
         }
         rates = smooth.update(raw, TICK_MS);
         readout(task, weightsRef.current, rates, action);
@@ -344,6 +366,14 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
       } finally {
         inFlight = false;
       }
+    };
+
+    const pump = () => {
+      if (!alive || inFlight || budget < TICK_MS) return;
+      budget -= TICK_MS;
+      void tick().then(pump, (e) => {
+        if (alive) setError(e instanceof Error ? e.message : String(e));
+      });
     };
 
     const drawBars = () => {
@@ -393,11 +423,9 @@ export default function TrainingLab({ taskId, spec, meta }: { taskId?: string; s
       if (!alive) return;
       const dt = Math.min(100, t - last);
       last = t;
-      budget += dt;
-      if (budget >= TICK_MS && !inFlight) {
-        budget = Math.min(budget - TICK_MS, 60);
-        void tick();
-      }
+      // keep real time even when the page draws slowly: finished steps start the next one
+      budget = Math.min(budget + dt, TICK_MS * 12);
+      pump();
       if (bars.current) theme ??= readTheme(bars.current);
       const c = stage.current;
       if (c && theme) {

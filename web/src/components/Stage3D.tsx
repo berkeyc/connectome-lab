@@ -4,6 +4,7 @@
 // flashing as they spike, and the fly whose brain it is.
 import { useEffect, useRef, useState } from "react";
 import type { ActivityMode, BrainView as BrainViewT, Indicator, SpikeBus } from "@/lib/three/brain";
+import { FLY_CREDIT } from "@/lib/three/credits";
 import { SKELETON_CREDIT } from "@/lib/three/skeletons";
 import type { CameraMode, SceneKind } from "@/lib/three/scenes";
 import { lerpSnap, signalOf, type Snap } from "@/lib/three/snap";
@@ -266,10 +267,10 @@ export default function Stage3D({ kind, getSnap, brain, showFly = true, badges, 
           )}
           {showFly && (
             <div className="panel3d">
-              <span className="panel3d-label">
+              <span className="panel3d-label" title={FLY_CREDIT}>
                 Fly · <span ref={sig} className="panel3d-signal" />
               </span>
-              <canvas ref={flyC} aria-label="The fly" />
+              <canvas ref={flyC} aria-label="The fly, a model of Drosophila melanogaster" />
             </div>
           )}
         </div>

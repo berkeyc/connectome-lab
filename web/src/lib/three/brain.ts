@@ -213,7 +213,7 @@ export class BrainView {
         const g = new THREE.BufferGeometry();
         g.setAttribute("position", new THREE.BufferAttribute(P, 3));
         const base = new THREE.Color(CLASS_COLOR[classes[cls[pick[k]]]] ?? CLASS_COLOR.other);
-        const line = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: base.clone(), transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
+        const line = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: base.clone(), transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false }));
         this.scene.add(line);
         this.skeletons.push({ idx: pick[k], line, base });
         drawn++;
@@ -257,8 +257,8 @@ export class BrainView {
       const v = this.mode === "calcium" ? ca[s.idx] : a[s.idx];
       const m = s.line.material as THREE.LineBasicMaterial;
       if (this.mode === "calcium") m.color.setRGB(0.08 + 0.5 * v, 0.2 + 0.8 * v, 0.1 + 0.35 * v);
-      else m.color.copy(s.base).lerp(new THREE.Color(1, 0.97, 0.9), v * 0.8);
-      m.opacity = 0.35 + 0.6 * v;
+      else m.color.copy(s.base).multiplyScalar(0.7).lerp(new THREE.Color(1, 0.97, 0.9), v * 0.6);
+      m.opacity = 0.12 + 0.55 * v;
     }
     if (spin) this.angle += dtMs * 0.00012;
     const d = this.radius * 3.3;

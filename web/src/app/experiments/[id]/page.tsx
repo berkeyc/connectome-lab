@@ -4,7 +4,12 @@ import { notFound } from "next/navigation";
 import ExperimentPlayer from "@/components/ExperimentPlayer";
 import { getSpecies } from "@/lib/data";
 import type { SpeciesMeta } from "@/lib/engine/types";
+import ProjectCard from "@/components/ProjectCard";
 import { EXPERIMENTS, getExperiment } from "@/lib/experiments/catalog";
+import { getTask } from "@/lib/training/tasks";
+import { CLIPS, FAMILY_INFO, groupOf, kindOf } from "@/lib/site";
+
+const KIND = { reflex: "No training: the wiring alone", trained: "Trained readout on fixed wiring", teaching: "Teaching brain (invented numbers)", local: "Local runner" } as const;
 
 export function generateStaticParams() {
   return EXPERIMENTS.map((e) => ({ id: e.id }));
@@ -26,6 +31,10 @@ export default async function ExperimentPage(props: PageProps<"/experiments/[id]
   if (!e) notFound();
   const species = await getSpecies(e.runsIn === "browser" ? e.species : (e.localSpecies ?? e.species));
   const browserMeta = e.runsIn === "browser" ? ((await getSpecies(e.species)) as SpeciesMeta) : undefined;
+  const group = groupOf(e);
+  const kind = kindOf(e);
+  const trainable = getTask(e.id) ? e.id : e.id === "fly-drives-a-car" ? "fly-steering" : e.id === "worm-food-search" ? "worm-chemotaxis" : null;
+  const related = EXPERIMENTS.filter((x) => x.id !== e.id && groupOf(x).family === group.family && x.runsIn === "browser").slice(0, 4);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LearningResource",
@@ -40,20 +49,27 @@ export default async function ExperimentPage(props: PageProps<"/experiments/[id]
     <div className="wrap">
       {/* JSON-LD: "<" is escaped so no string can close the script tag */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-      <div className="page-head" style={{ paddingBottom: 18 }}>
-        <div>
-          <div className="eyebrow">
-            <Link href="/experiments" style={{ textDecoration: "none" }}>
-              Experiments
-            </Link>{" "}
-            · {species?.common_name}
-          </div>
-          <h1 style={{ fontSize: "clamp(28px, 3.8vw, 44px)", marginTop: 8 }}>{e.title}</h1>
-          <p className="lede" style={{ marginTop: 12 }}>
-            {e.question}
-          </p>
+      <header className="page-intro compact">
+        <div className="crumbs">
+          <Link href="/experiments">Experiments</Link> <span>/</span> <Link href={`/experiments#fam-${group.family}`}>{FAMILY_INFO[group.family].title}</Link>
         </div>
-      </div>
+        <h1>{e.title}</h1>
+        <p className="lede">{e.question}</p>
+        <div className="intro-meta">
+          <span className={`tag ${kind === "reflex" ? "real" : kind === "teaching" ? "warn" : "plain"}`}>{KIND[kind]}</span>
+          <span className="tag plain">{species?.common_name}</span>
+          {trainable && (
+            <Link className="text-link" href={`/train/${trainable}`}>
+              Train it yourself →
+            </Link>
+          )}
+          {e.id.startsWith("gym-") && (
+            <Link className="text-link" href="/gym">
+              Benchmark scores →
+            </Link>
+          )}
+        </div>
+      </header>
 
       {e.createWorld ? (
         <ExperimentPlayer experimentId={e.id} meta={browserMeta} />
@@ -143,6 +159,18 @@ python local/runner.py            # listens on ws://localhost:8765`}
           </ul>
         )}
       </div>
+      {related.length > 0 && (
+        <section className="related" aria-labelledby="related-head">
+          <div className="hub-head">
+            <h2 id="related-head">More {FAMILY_INFO[group.family].title.toLowerCase()}</h2>
+          </div>
+          <div className="card-grid">
+            {related.map((r) => (
+              <ProjectCard key={r.id} href={`/experiments/${r.id}`} title={r.title} text={r.tagline} clip={CLIPS.has(r.id) ? r.id : null} size="compact" />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -2,5 +2,5 @@ import type { MetadataRoute } from "next";
 import { SITE } from "./sitemap";
 
 export default function robots(): MetadataRoute.Robots {
-  return { rules: { userAgent: "*", allow: "/" }, sitemap: `${SITE}/sitemap.xml` };
+  return { rules: { userAgent: "*", allow: "/", disallow: "/render/" }, sitemap: `${SITE}/sitemap.xml` };
 }

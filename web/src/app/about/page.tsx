@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Method", description: "How Connectome Lab simulates mapped nervous systems, and what it cannot tell you." };
+export const metadata: Metadata = { title: "About", description: "How Connectome Lab simulates mapped nervous systems, and what it cannot tell you." };
 
 export default function About() {
   return (
     <div className="wrap" style={{ paddingTop: 48 }}>
       <div className="prose">
-        <div className="eyebrow">Method</div>
+        <div className="crumbs">
+          <Link href="/">Home</Link> <span>/</span> About
+        </div>
         <h1 style={{ fontSize: "clamp(30px, 4vw, 44px)", marginTop: 10 }}>How the lab works</h1>
+        <p className="intro-links">
+          <Link href="/research" className="text-link">
+            Who else works on this: the research landscape →
+          </Link>
+        </p>
         <p className="lede" style={{ marginTop: 16 }}>
           A connectome is a wiring diagram: which neuron connects to which, and through how many synapses. Connectome
           Lab asks a simple question of each one. How much behaviour can the wiring produce on its own?
@@ -135,6 +142,13 @@ export default function About() {
           <code>?quality=high</code> or <code>?quality=low</code> to a page to choose.
         </p>
 
+        <p>
+          <strong>Preview clips.</strong> The short videos on the project cards are not animations made by hand. Each one is
+          recorded from the same simulation the live page runs, one frame at a time with a fixed seed, by{" "}
+          <code>web/scripts/capture-thumbs.mjs</code>. The dataset pictures in the <Link href="/library">library</Link> plot
+          the measured FlyWire neuron positions (<code>pipeline/make_anatomy_thumbs.py</code>).
+        </p>
+
         <h2 id="nes">Running a circuit in BrainGenix-NES</h2>
         <p>
           <a href="https://github.com/carboncopies/BrainGenix-NES">BrainGenix-NES</a>, from the Carboncopies Foundation,
@@ -149,7 +163,8 @@ export default function About() {
         <h2>Who else works on this, and where we fit</h2>
         <p>
           We looked for people and institutions building a library like this one. Nobody offers exactly this combination, but
-          several projects cover parts of it, and we build on or point to them:
+          several projects cover parts of it, and we build on or point to them. The full, dated list is on the{" "}
+          <Link href="/research">research landscape</Link> page; the main ones:
         </p>
         <ul>
           <li>

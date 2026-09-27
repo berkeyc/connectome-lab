@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLibrary } from "@/lib/data";
+import ProjectCard from "@/components/ProjectCard";
+import { circuitLabel, clipForTask } from "@/lib/site";
 import { TASKS } from "@/lib/training/tasks";
 
 export const metadata: Metadata = {
@@ -12,29 +14,35 @@ export default async function TrainIndex() {
   const lib = await getLibrary();
   return (
     <div className="wrap">
-      <header className="page-head compact">
-        <div>
-          <div className="eyebrow">Train</div>
-          <h1>Teach a real connectome a task</h1>
-          <p className="lede">
-            The wiring stays exactly as it was mapped. A small readout learns to turn the circuit&apos;s activity into
-            movement, and you watch the learning curve, the neurons and the body while it happens. Then you train a rewired
-            control and find out whether the real wiring made a difference.
-          </p>
+      <header className="page-intro">
+        <div className="crumbs">
+          <Link href="/">Home</Link> <span>/</span> Train
+        </div>
+        <h1>Teach a real connectome a task</h1>
+        <p className="lede">
+          The wiring stays exactly as it was mapped. A small readout learns to turn the circuit&apos;s activity into movement,
+          and you watch the learning curve, the neurons and the body while it happens. Then you train a rewired control and
+          find out whether the real wiring made a difference.
+        </p>
+        <div className="intro-links">
+          <Link href="/train/custom" className="text-link">
+            Build your own task from a JSON recipe →
+          </Link>
         </div>
       </header>
-      <div className="task-grid">
+      <div className="card-grid">
         {TASKS.map((t) => {
           const s = lib.find((x) => x.id === t.species);
           return (
-            <Link key={t.id} href={`/train/${t.id}`} className="task-card">
-              <span className="eyebrow">{s?.common_name}</span>
-              <h2>{t.title}</h2>
-              <p>{t.tagline}</p>
-              <span className="task-meta">
-                {s?.stats?.neurons?.toLocaleString("en")} neurons · {t.features.length} readout neurons · {t.features.length * t.actions.length + t.actions.length} trained numbers
-              </span>
-            </Link>
+            <ProjectCard
+              key={t.id}
+              href={`/train/${t.id}`}
+              eyebrow={s ? circuitLabel(s.common_name) : undefined}
+              title={t.title}
+              text={t.tagline}
+              clip={clipForTask(t.id)}
+              tags={[{ label: `${t.features.length * t.actions.length + t.actions.length} trained numbers` }, ...(t.pretrained ? [{ label: "Pretrained readout included", tone: "real" as const }] : [])]}
+            />
           );
         })}
       </div>

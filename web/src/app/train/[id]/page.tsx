@@ -25,14 +25,12 @@ export default async function TrainPage(props: PageProps<"/train/[id]">) {
 
   return (
     <div className="wrap">
-      <header className="page-head compact">
-        <div>
-          <div className="eyebrow">
-            <Link href="/train">Train</Link> · {species.common_name}
-          </div>
-          <h1>{task.title}</h1>
-          <p className="lede">{task.question}</p>
+      <header className="page-intro compact">
+        <div className="crumbs">
+          <Link href="/train">Train</Link> <span>/</span> {species.common_name}
         </div>
+        <h1>{task.title}</h1>
+        <p className="lede">{task.question}</p>
       </header>
 
       <TrainingLab taskId={task.id} meta={species as SpeciesMeta} />

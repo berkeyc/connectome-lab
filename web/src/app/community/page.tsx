@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import CommunityGrid from "@/components/CommunityGrid";
 import UserExperiments from "@/components/UserExperiments";
 
@@ -10,14 +11,22 @@ export const metadata: Metadata = {
 export default function CommunityPage() {
   return (
     <div className="wrap">
-      <header className="page-head compact">
-        <div>
-          <div className="eyebrow">Community</div>
-          <h1>Everyone&apos;s connectome experiments</h1>
-          <p className="lede">
-            In 2026 people wired fly connectomes into games, cars and robot bodies. Here they are with their authors, their
-            code and, where it matters, what the method can and cannot show. Below them: experiments built on this site.
-          </p>
+      <header className="page-intro">
+        <div className="crumbs">
+          <Link href="/">Home</Link> <span>/</span> Community
+        </div>
+        <h1>Everyone&apos;s connectome experiments</h1>
+        <p className="lede">
+          In 2026 people wired fly connectomes into games, cars and robot bodies. Here they are with their authors, their code
+          and, where it matters, what the method can and cannot show. Below them: experiments built on this site.
+        </p>
+        <div className="intro-links">
+          <Link href="/community/new" className="text-link">
+            Build and share an experiment →
+          </Link>
+          <Link href="/research" className="text-link">
+            The research landscape →
+          </Link>
         </div>
       </header>
       <UserExperiments />

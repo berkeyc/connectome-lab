@@ -11,6 +11,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/`, lastModified: now, priority: 1 },
     { url: `${SITE}/experiments`, lastModified: now, priority: 0.9 },
     { url: `${SITE}/gym`, lastModified: now, priority: 0.9 },
+    { url: `${SITE}/library`, lastModified: now, priority: 0.8 },
+    { url: `${SITE}/research`, lastModified: now, priority: 0.7 },
     ...EXPERIMENTS.map((e) => ({ url: `${SITE}/experiments/${e.id}`, lastModified: now, priority: 0.8 })),
     ...lib.filter((s) => s.status !== "planned").map((s) => ({ url: `${SITE}/species/${s.id}`, lastModified: now, priority: 0.6 })),
     ...lib.filter((s) => s.browser).map((s) => ({ url: `${SITE}/lab/${s.id}`, lastModified: now, priority: 0.6 })),

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EXPERIMENTS } from "@/lib/experiments/catalog";
+import { SPECIES_VISUAL } from "@/lib/site";
 import { notFound } from "next/navigation";
 import FlowMatrix from "@/components/FlowMatrix";
 import Sigil from "@/components/Sigil";
@@ -23,10 +25,15 @@ export default async function SpeciesPage(props: PageProps<"/species/[id]">) {
   const s = await getSpecies(id);
   if (!s || s.status === "planned") notFound();
   const summary = await getSummary(id);
+  const uses = EXPERIMENTS.filter((e) => e.species === id || e.localSpecies === id);
+  const visual = SPECIES_VISUAL[id] ?? {};
 
   return (
     <div className="wrap">
-      <div className="page-head">
+      <div className="crumbs" style={{ paddingTop: 28 }}>
+        <Link href="/library">Library</Link> <span>/</span> {s.common_name}
+      </div>
+      <div className="page-head" style={{ paddingTop: 12 }}>
         <div>
           <div className="row" style={{ gap: 14 }}>
             <Sigil id={s.id} size={52} />
@@ -43,12 +50,26 @@ export default async function SpeciesPage(props: PageProps<"/species/[id]">) {
             <span className="faint small">{s.dataset}</span>
           </div>
         </div>
-        {summary?.browserSimulation && (
-          <Link className="btn primary" href={`/lab/${s.id}`}>
-            Run experiments
-          </Link>
-        )}
+        <div className="row">
+          {summary?.browserSimulation && (
+            <Link className="btn primary" href={`/lab/${s.id}`}>
+              Stimulate and silence cells
+            </Link>
+          )}
+          {uses.length > 0 && (
+            <Link className="btn" href={`/experiments/${uses[0].id}`}>
+              See it in an experiment
+            </Link>
+          )}
+        </div>
       </div>
+      {visual.image && (
+        <figure className="species-visual">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={visual.image} alt={`Every neuron of ${s.common_name} at its measured position, seen from the front`} />
+          <figcaption>Every neuron at its measured FlyWire position, seen from the front, coloured by class.</figcaption>
+        </figure>
+      )}
 
       {!summary ? (
         <div className="panel empty">

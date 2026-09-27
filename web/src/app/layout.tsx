@@ -30,11 +30,33 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </header>
         <main id="main">{children}</main>
         <footer className="site-footer">
-          <div className="wrap">
-            <span>Connectome Lab · open source under the MIT licence · <a href="https://github.com/berkeyc/connectome-lab">GitHub</a></span>
-            <span>
-              Data belongs to its original authors; every species page lists what to cite. <Link href="/privacy">Privacy</Link>
-            </span>
+          <div className="wrap footer-grid">
+            <div className="footer-brand">
+              <Link href="/" className="brand">
+                <Sigil id="connectome-lab" size={24} />
+                <span>Connectome Lab</span>
+              </Link>
+              <p>Real wiring diagrams of flies and worms, running live in your browser, always next to rewired controls.</p>
+            </div>
+            <nav aria-label="Explore">
+              <h4>Explore</h4>
+              <Link href="/experiments">Experiments</Link>
+              <Link href="/gym">Benchmark</Link>
+              <Link href="/train">Train</Link>
+              <Link href="/library">Library</Link>
+            </nav>
+            <nav aria-label="Project">
+              <h4>Project</h4>
+              <Link href="/about">Method and limits</Link>
+              <Link href="/research">Research landscape</Link>
+              <Link href="/community">Community</Link>
+              <a href="https://github.com/berkeyc/connectome-lab">GitHub</a>
+            </nav>
+            <div className="footer-note">
+              <h4>Data and licences</h4>
+              <p>Code under the MIT licence. Data belongs to its original authors; every library page lists what to cite.</p>
+              <Link href="/privacy">Privacy</Link>
+            </div>
           </div>
         </footer>
       </body>

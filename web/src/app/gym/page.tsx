@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Thumb from "@/components/Thumb";
 import { FAMILIES, GYM, GYM_RESULTS, type GymEntry } from "@/lib/gym/catalog";
+import { CLIPS } from "@/lib/site";
 import { CIRCUIT_LABEL, type CircuitVariant } from "@/lib/training/types";
 
 export const metadata: Metadata = {
-  title: "Fly Gym",
+  title: "Benchmark",
   description:
     "Eight tasks for one real fly circuit, from feeding reflexes to poker, each measured on the real FlyWire wiring and on rewired, random and silenced controls.",
 };
@@ -114,17 +116,17 @@ export default function GymPage() {
   const wins = trained.filter((v) => v?.tone === "good").length;
   return (
     <div className="wrap">
-      <header className="page-head compact">
-        <div>
-          <div className="eyebrow">Fly Gym</div>
-          <h1>One real fly circuit, eight very different tasks</h1>
-          <p className="lede">
-            Feeding, backing away from walls, poker, Pong, an odour maze, a two flower gamble, gusty flight and a chase. Every
-            task runs on the same 1,846 neurons cut from the FlyWire connectome, and every result is shown next to the same
-            task on rewired, random and silenced circuits. The question is never only whether the fly can do it, but whether
-            the real wiring is what makes it possible.
-          </p>
+      <header className="page-intro">
+        <div className="crumbs">
+          <Link href="/">Home</Link> <span>/</span> Benchmark
         </div>
+        <h1>Benchmark: one fly circuit, eight tasks, four brains</h1>
+        <p className="lede">
+          Feeding, backing away from walls, poker, Pong, an odour maze, a two flower gamble, gusty flight and a chase. Every
+          task runs on the same 1,846 neurons cut from the FlyWire connectome, and every result is shown next to the same
+          task on rewired, random and silenced circuits. The question is never only whether the fly can do it, but whether
+          the real wiring is what makes it possible.
+        </p>
       </header>
 
       <section className="panel block prose gym-how">
@@ -151,6 +153,9 @@ export default function GymPage() {
           <div className="gym-grid">
             {GYM.filter((g) => g.family === f.id).map((e) => (
               <article key={e.id} className="gym-card">
+                <Link href={`/experiments/${e.experimentId}`} className="gym-card-media" aria-label={`Watch ${e.title}`}>
+                  <Thumb clip={CLIPS.has(e.experimentId) ? e.experimentId : null} alt={e.title} />
+                </Link>
                 <div className="gym-card-head">
                   <span className="eyebrow">{e.kind === "reflex" ? "No training" : "Trained readout"}</span>
                   <h3>{e.title}</h3>

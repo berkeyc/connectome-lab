@@ -562,7 +562,7 @@ class PlateScene extends BaseScene {
     this.lawn.rotation.x = -Math.PI / 2;
     this.lawn.position.y = 0.003;
     this.scene.add(this.lawn);
-    this.worm = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshPhysicalMaterial({ color: 0xf2e6d8, roughness: 0.3, sheen: 0.6, sheenColor: new THREE.Color(0xffffff), clearcoat: 0.8, emissive: 0x2a241e }));
+    this.worm = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshPhysicalMaterial({ color: 0xe4d6c2, roughness: 0.35, sheen: 0.4, sheenColor: new THREE.Color(0xfff4e6), clearcoat: 0.8, emissive: 0x1e1a15 }));
     this.worm.castShadow = true;
     this.scene.add(this.worm);
     this.trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x8a6b3c, transparent: true, opacity: 0.5 }));
@@ -600,15 +600,45 @@ class PlateScene extends BaseScene {
       body.push(q);
     }
     if (body.length >= 3) {
+      // a travelling body wave and a tapered body, for the eye only: the track itself comes from the simulation
+      const base = new THREE.CatmullRomCurve3(body);
+      const n = 32;
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i <= n; i++) {
+        const u = i / n;
+        const p = base.getPointAt(u);
+        const tan = base.getTangentAt(u);
+        const side = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+        const amp = 0.012 * Math.min(1, u * 4);
+        pts.push(p.addScaledVector(side, amp * Math.sin(u * 11 - this.t * 7)));
+      }
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const seg = 48;
+      const radial = 10;
+      const geo = new THREE.TubeGeometry(curve, seg, 0.016, radial, false);
+      const pos = geo.attributes.position as THREE.BufferAttribute;
+      const v = new THREE.Vector3();
+      for (let i = 0; i <= seg; i++) {
+        const u = i / seg;
+        const c = curve.getPointAt(u);
+        const taper = 0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, u * 1.15 + 0.04));
+        for (let j = 0; j <= radial; j++) {
+          const k = i * (radial + 1) + j;
+          v.fromBufferAttribute(pos, k).sub(c).multiplyScalar(taper).add(c);
+          pos.setXYZ(k, v.x, v.y, v.z);
+        }
+      }
+      geo.computeVertexNormals();
       this.worm.geometry.dispose();
-      this.worm.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(body), 48, 0.018, 10, false);
+      this.worm.geometry = geo;
     }
     const wantPos = new THREE.Vector3();
     const wantLook = new THREE.Vector3();
     if (this.mode === "chase") {
-      // close over the worm's shoulder
-      wantPos.set(snap.head.x - Math.cos(snap.heading) * 0.45, 0.55, snap.head.y - Math.sin(snap.heading) * 0.45);
-      wantLook.set(snap.head.x + Math.cos(snap.heading) * 0.2, 0, snap.head.y + Math.sin(snap.heading) * 0.2);
+      // circle slowly above the worm, close enough to see it bend, far enough to see its track
+      const a = reduceMotion() ? 0.8 : 0.8 + this.t * 0.15;
+      wantPos.set(snap.head.x + Math.sin(a) * 0.5, 0.62, snap.head.y + Math.cos(a) * 0.5);
+      wantLook.set(snap.head.x, 0, snap.head.y);
     } else {
       const a = reduceMotion() ? 0.4 : 0.4 + this.t * 0.1;
       wantPos.set(Math.sin(a) * 1.4, 1.45, Math.cos(a) * 1.4);

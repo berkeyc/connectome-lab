@@ -1,81 +1,59 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import WorldThumb from "@/components/WorldThumb";
+import ExperimentHub, { type HubItem } from "@/components/ExperimentHub";
 import { getLibrary } from "@/lib/data";
 import { EXPERIMENTS } from "@/lib/experiments/catalog";
+import { circuitLabel, CLIPS, FAMILY_INFO, FAMILY_ORDER, groupOf, kindOf, SPECIES_VISUAL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Experiments",
-  description: "Watch real connectomes drive bodies and vehicles: a worm backing away from a wall, a FlyWire circuit escaping a shadow and driving a car. Run them in your browser, next to rewired controls.",
+  description:
+    "Real fly and worm circuits driving bodies in your browser: escape, feeding, driving, flight, poker, Pong and more, each next to rewired controls.",
 };
-
-const RUNS = { browser: "Runs in your browser", local: "Local runner", planned: "Planned · local" } as const;
 
 export default async function ExperimentsPage() {
   const lib = await getLibrary();
-  const name = (id: string) => lib.find((s) => s.id === id)?.common_name ?? id;
-  const main = EXPERIMENTS.filter((e) => !e.id.startsWith("gym-"));
-  const gym = EXPERIMENTS.filter((e) => e.id.startsWith("gym-"));
-  const card = (e: (typeof EXPERIMENTS)[number], k: number) => (
-    <Link key={e.id} href={`/experiments/${e.id}`} className={`panel exp-card reveal ${k < 2 ? "wide" : ""}`} style={{ ["--i" as string]: k }}>
-      {e.createWorld ? <WorldThumb id={e.id} /> : <div className="exp-thumb" style={{ display: "grid", placeItems: "center", color: "var(--text-3)" }}>coming to the local runner</div>}
-      <div className="exp-body">
-        <div className="exp-meta">
-          <span className={`pill ${e.runsIn === "browser" ? "real" : "local"}`}>{RUNS[e.runsIn]}</span>
-          {e.brainKind === "synthetic" && <span className="pill synthetic">Teaching brain</span>}
-          <span className="pill">{name(e.localSpecies && e.runsIn !== "browser" ? e.localSpecies : e.species)}</span>
-        </div>
-        <h3>{e.title}</h3>
-        <p>{e.tagline}</p>
-      </div>
-    </Link>
-  );
+  const name = (id: string) => circuitLabel(lib.find((s) => s.id === id)?.common_name ?? id);
+  const items: HubItem[] = EXPERIMENTS.map((e) => {
+    const g = groupOf(e);
+    const local = e.runsIn !== "browser";
+    return {
+      id: e.id,
+      title: e.title,
+      tagline: e.tagline,
+      family: g.family,
+      animal: g.animal,
+      kind: kindOf(e),
+      clip: CLIPS.has(e.id) ? e.id : null,
+      image: local ? SPECIES_VISUAL["fruit-fly-flywire"]?.image : undefined,
+      has2d: Boolean(e.createWorld),
+      circuit: name(local && e.localSpecies ? e.localSpecies : e.species),
+    };
+  });
+  const families = FAMILY_ORDER.map((id) => ({ id, ...FAMILY_INFO[id] }));
+  const live = items.filter((i) => i.kind !== "local").length;
+
   return (
     <div className="wrap">
-      <div className="page-head">
-        <div>
-          <div className="eyebrow">Experiment library</div>
-          <h1 style={{ fontSize: "clamp(32px, 4.4vw, 50px)", marginTop: 10 }}>Brains in bodies</h1>
-          <p className="lede" style={{ marginTop: 16 }}>
-            Every experiment connects a mapped nervous system to a simulated world. The world feeds the senses, the
-            connectome moves the body. Swap in a rewired brain and see whether the behaviour survives.
-          </p>
+      <header className="page-intro">
+        <div className="crumbs">
+          <Link href="/">Home</Link> <span>/</span> Experiments
         </div>
-      </div>
-      <div className="exp-grid">
-        {main.map((e, k) => card(e, k))}
-      </div>
-      <section className="gym-family" style={{ marginTop: 40 }}>
-        <div className="gym-family-head">
-          <div className="eyebrow">Fly Gym</div>
-          <h2>Eight tasks for one fly circuit</h2>
-          <p>
-            From feeding reflexes to poker, all on the same 1,846 FlyWire neurons and all measured against rewired, random and
-            silenced circuits. <Link href="/gym">See the scoreboard</Link>.
-          </p>
-        </div>
-        <div className="exp-grid">{gym.map((e, k) => card(e, k + 2))}</div>
-      </section>
-      <section className="community-teaser">
-        <div>
-          <div className="eyebrow">From the community</div>
-          <h2>Fly Dino, Swat, the Beat Saber fly and many more</h2>
-          <p className="muted">Credited to their authors, with their code, and notes on what each method can show.</p>
-        </div>
-        <Link className="btn primary" href="/community">
-          Open the community gallery
-        </Link>
-      </section>
-
-      <div className="panel block" style={{ marginTop: 28 }}>
-        <h3>Why some experiments run locally</h3>
-        <p className="sub" style={{ marginBottom: 0 }}>
-          A circuit of a thousand or so neurons simulates faster than real time in a browser tab. The complete FlyWire fly
-          brain has about 139,000 neurons and 15 million connections, and games like Minecraft need their own client. For those,
-          the brain runs in a small program on your computer and this site connects to it, so you keep the same live
-          view, signals and controls.
+        <h1>Experiments</h1>
+        <p className="lede">
+          Every experiment connects a mapped nervous system to a simulated body and world. The world feeds the senses, the
+          real wiring does the rest. {live} run in your browser; switch any of them to a rewired brain and see what survives.
         </p>
-      </div>
+        <div className="intro-links">
+          <Link href="/gym" className="text-link">
+            See how each task scores against controls →
+          </Link>
+          <Link href="/train" className="text-link">
+            Train your own readout →
+          </Link>
+        </div>
+      </header>
+      <ExperimentHub items={items} families={families} />
     </div>
   );
 }
